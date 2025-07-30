@@ -6,7 +6,9 @@
   <title>Test</title>
   <script>
     import("./_build/default/test/test.bc.js").then((_) => {
-      console.log(MessengerUI);
+      MessengerUI.init();
+      console.log(MessengerUI.update());
+      console.log(MessengerUI.debug());
     });
   </script>
 </head>

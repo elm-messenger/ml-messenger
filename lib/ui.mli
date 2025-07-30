@@ -1,4 +1,5 @@
-type init_env = { client : string; version : string; viewport : int * int }
+
+type init_env = { viewport : int * int }
 type side_effect = { renderable : bool }
 
 type world_event =
@@ -11,6 +12,10 @@ type world_event =
 type 'a ui = {
   init : init_env -> 'a;
   update : world_event -> 'a -> 'a * side_effect;
+  debug : 'a -> string;
 }
 
-val export : 'a ui -> unit
+
+module JsExport : sig
+  val export : 'a ui -> unit
+end

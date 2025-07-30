@@ -1,0 +1,8 @@
+(library
+ (name messenger)
+ (libraries js_of_ocaml)
+ (public_name ml-messenger)
+ (preprocess
+  (pps js_of_ocaml-ppx))
+ (flags
+  (:standard -warn-error -A)))

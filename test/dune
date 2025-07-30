@@ -1,0 +1,8 @@
+(executable
+ (name test)
+ (libraries js_of_ocaml ml-messenger)
+ (modes js)
+ (preprocess
+  (pps js_of_ocaml-ppx))
+ (flags
+  (:standard -warn-error -A)))

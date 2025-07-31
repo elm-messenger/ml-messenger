@@ -5,4 +5,4 @@
  (preprocess
   (pps js_of_ocaml-ppx))
  (flags
-  (:standard -warn-error -A) ))
+  (:standard -warn-error -A)))

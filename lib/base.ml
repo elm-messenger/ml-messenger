@@ -8,7 +8,6 @@ type world_event =
   | WTick of float
   | WNullEvent
 
-
 type user_event =
   | MouseMove of float * float
   | MouseDown of int * (float * float)

@@ -6,3 +6,9 @@
   (pps js_of_ocaml-ppx))
  (flags
   (:standard -warn-error -A)))
+
+(test
+ (name test_recursion)
+ (libraries ml-messenger)
+ (flags
+  (:standard -warn-error -A)))

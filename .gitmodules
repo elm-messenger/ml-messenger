@@ -1,0 +1,3 @@
+[submodule "messenger-core"]
+	path = messenger-core
+	url = git@github.com:elm-messenger/messenger-core

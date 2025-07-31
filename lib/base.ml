@@ -1,5 +1,15 @@
 (* World Event *)
 type world_event =
+  | WMouseMove of float * float
+  | WMouseDown of int * (float * float)
+  | WMouseUp of int * (float * float)
+  | WKeyDown of int
+  | WKeyUp of int
+  | WTick of float
+  | WNullEvent
+
+
+type user_event =
   | MouseMove of float * float
   | MouseDown of int * (float * float)
   | MouseUp of int * (float * float)

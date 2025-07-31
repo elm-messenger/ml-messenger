@@ -26,7 +26,7 @@ let rec update_one last_env evt objs last_objs last_msg_unfinished
         ( rev rest_objs @ [ new_obj ] @ last_objs,
           ( last_msg_unfinished @ unfinished_msg,
             last_msg_finished @ finished_msg ),
-          (last_env, block) )
+          (new_env, block) )
       else
         update_one new_env evt rest_objs (new_obj :: last_objs)
           (last_msg_unfinished @ unfinished_msg)

@@ -1,3 +1,6 @@
 [submodule "messenger-core"]
 	path = messenger-core
 	url = git@github.com:elm-messenger/messenger-core
+[submodule "elm-regl"]
+	path = elm-regl
+	url = git@github.com:elm-messenger/elm-regl

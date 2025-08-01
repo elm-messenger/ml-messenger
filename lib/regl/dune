@@ -1,0 +1,8 @@
+(library
+ (name regl)
+ (libraries js_of_ocaml)
+ (public_name regl)
+ (preprocess
+  (pps js_of_ocaml-ppx))
+ (flags
+  (:standard -warn-error -A)))

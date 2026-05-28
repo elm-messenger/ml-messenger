@@ -6,8 +6,6 @@ type msg = Inc
 type som = Done
 
 type data = { id : int; value : int }
-type bdata = unit
-
 let component id =
   let con : (_, _, _, _, _, _, _, _, _) General_model.concrete_general_model =
     {

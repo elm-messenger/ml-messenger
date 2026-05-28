@@ -1,5 +1,3 @@
-open Ml_regl_core
-
 type runtime = Internal.runtime
 
 type 'userdata global_data_init = { user_data : 'userdata; camera : Camera.t; volume : float }

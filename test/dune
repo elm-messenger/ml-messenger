@@ -7,6 +7,21 @@
  (flags
   (:standard -warn-error -A)))
 
+(executable
+ (name test_desktop)
+ (modules test_desktop)
+ (libraries regl_desktop ml-messenger)
+ (modes
+  (native exe))
+ (flags
+  (:standard -warn-error -A)))
+
+(rule
+ (target test_desktop.ml)
+ (deps test.ml)
+ (action
+  (copy %{deps} %{target})))
+
 (test
  (name test_recursion)
  (libraries js_of_ocaml regl_js ml-messenger)

@@ -3,18 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Test</title>
-  <script>
-    import("./_build/default/test/test.bc.js").then((_) => {
-      MessengerUI.init();
-      console.log(MessengerUI.update());
-      console.log(MessengerUI.update());
-      console.log(MessengerUI.update());
-      console.log(MessengerUI.debug());
-    });
-  </script>
+  <title>ml-messenger test</title>
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; background: #111; }
+    body { display: grid; place-items: center; }
+    canvas { width: 800px; height: 600px; background: white; }
+  </style>
+  <script src="/_build/default/test/test.bc.js"></script>
+  <script src="/ml-regl-js/build/regl.js"></script>
 </head>
 <body>
-  
+  <canvas id="myCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById("myCanvas");
+    canvas.width = 800;
+    canvas.height = 600;
+    MlREGL.init(canvas, MlApp, []);
+    MlApp.init();
+  </script>
 </body>
 </html>

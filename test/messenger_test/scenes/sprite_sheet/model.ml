@@ -1,20 +1,22 @@
 open Ml_regl_core
 open Messenger
 
-type data = unit
+type data = { frame : int }
 
 let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
   {
-    init = (fun _ _ _ -> ());
+    init = (fun _ _ _ -> { frame = 0 });
     update =
-      (fun _ env evnt () ->
+      (fun _ env evnt data ->
         match evnt with
         | Regl_proto.KeyDown "Backspace" ->
-            ((), [ Scene.SOMChangeScene (None, "Home") ], env)
-        | _ -> ((), [], env));
+            (data, [ Scene.SOMChangeScene (None, "Home") ], env)
+        | Regl_proto.UpdateTick _ ->
+            ({ frame = data.frame + 1 }, [], env)
+        | _ -> (data, [], env));
     view =
-      (fun runtime _env () ->
-        let frame = Base.get_scene_start_frame runtime / 8 in
+      (fun runtime _env data ->
+        let frame = data.frame / 8 in
         let row_sizes = [| 13; 8; 10; 10; 10; 6; 4; 7 |] in
         let sprites =
           row_sizes |> Array.to_list

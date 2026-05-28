@@ -17,6 +17,7 @@ type ('userdata, 'scenemsg) data = {
   filter_som : bool;
   phase : phase;
   old_vsr : ('userdata, 'scenemsg) Vsr.t option;
+  prev_ts : float option;
 }
 
 let clamp01 x = max 0. (min 1. x)
@@ -38,6 +39,7 @@ let init (opt : ('scenemsg, 'userdata) init_option) runtime env _msg =
       filter_som = opt.filter_som;
       phase = BeforeChange;
       old_vsr;
+      prev_ts = None;
     },
     { Scene.dead = false; post_processor = empty_pp } )
 
@@ -52,8 +54,7 @@ let suppress_scene_change_soms data msgs =
         | _ -> true)
       msgs
 
-let update_m_transition runtime env (mt : mix_transition) data bdata =
-  let dt = Base.get_delta_time runtime in
+let update_m_transition _runtime env (mt : mix_transition) data bdata dt =
   let current = mt.current_transition +. dt in
   let ratio = if mt.t <= 0. then 1. else clamp01 (current /. mt.t) in
   let was_before_change = data.phase = BeforeChange in
@@ -81,8 +82,7 @@ let update_m_transition runtime env (mt : mix_transition) data bdata =
   in
   ((data, bdata), msgs, (env, false))
 
-let update_nm_transition runtime env (nt : no_mix_transition) data bdata =
-  let dt = Base.get_delta_time runtime in
+let update_nm_transition _runtime env (nt : no_mix_transition) data bdata dt =
   let current = nt.current_transition +. dt in
   match data.phase with
   | BeforeChange ->
@@ -128,11 +128,20 @@ let update_nm_transition runtime env (nt : no_mix_transition) data bdata =
         (env, false) )
 
 let update runtime env evnt data bdata =
+  let data =
+    match data.old_vsr with
+    | None -> data
+    | Some vsr ->
+        let new_vsr, _msgs = Vsr.update_vsr vsr evnt in
+        { data with old_vsr = Some new_vsr }
+  in
   match evnt with
-  | Regl_proto.UpdateTick _ -> (
-      match data.transition with
-      | MTransition mt -> update_m_transition runtime env mt data bdata
-      | NMTransition nt -> update_nm_transition runtime env nt data bdata)
+  | Regl_proto.UpdateTick ts ->
+      let dt = match data.prev_ts with None -> 0. | Some p -> ts -. p in
+      let data = { data with prev_ts = Some ts } in
+      (match data.transition with
+       | MTransition mt -> update_m_transition runtime env mt data bdata dt
+       | NMTransition nt -> update_nm_transition runtime env nt data bdata dt)
   | _ -> ((data, bdata), [], (env, false))
 
 let updaterec _runtime env _msg data bdata = ((data, bdata), [], env)

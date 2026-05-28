@@ -187,9 +187,7 @@ let rec handle_som input som model =
   let r = model.Model.runtime in
   match som with
   | Scene.SOMChangeScene (msg, name) ->
-      ( Loader.load_scene_by_name name input.scenes msg model
-        |> Model.reset_scene_start_time,
-        [] )
+      (Loader.load_scene_by_name name input.scenes msg model, [])
   | SOMPlayAudio (channel, name, opt) ->
       Audio.play_audio r.audio_repo channel name opt r.current_timestamp;
       (model, [])
@@ -260,21 +258,12 @@ let game_update input evnt model =
         in
         (psom, { model1 with env = Base.add_common_data scene env })
     in
-    let model3 =
-      match evnt with
-      | Regl_proto.UpdateTick _ ->
-          Model.update_scene_time model2 model.runtime.last_frame_delta
-      | _ -> model2
-    in
+    let model3 = model2 in
     handle_soms input (gcsom @ scenesom) model3
 
 let update_input_state (r : Internal.runtime) = function
   | Regl_proto.UpdateTick ts ->
-      let delta = ts -. r.current_timestamp in
-      r.current_timestamp <- ts;
-      r.last_frame_delta <- delta;
-      r.global_start_frame <- r.global_start_frame + 1;
-      r.global_start_time <- r.global_start_time +. delta
+      r.current_timestamp <- ts
   | MouseDown { button; x; y } ->
       r.pressed_mouse_buttons <-
         Internal.IntSet.add button r.pressed_mouse_buttons;

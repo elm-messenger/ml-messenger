@@ -27,12 +27,7 @@ type runtime = {
   local_values : (string, string) Hashtbl.t;
   pending_data_paths : (string, string list) Hashtbl.t;
   pending_audio_urls : (string, string) Hashtbl.t;
-  mutable scene_start_time : float;
-  mutable global_start_time : float;
-  mutable global_start_frame : int;
-  mutable scene_start_frame : int;
   mutable current_timestamp : float;
-  mutable last_frame_delta : float;
   mutable pressed_mouse_buttons : IntSet.t;
   mutable pressed_keys : StringSet.t;
   mutable mouse_pos : float * float;
@@ -55,12 +50,7 @@ let empty_runtime () =
     local_values = Hashtbl.create 16;
     pending_data_paths = Hashtbl.create 16;
     pending_audio_urls = Hashtbl.create 16;
-    scene_start_time = 0.;
-    global_start_time = 0.;
-    global_start_frame = 0;
-    scene_start_frame = 0;
     current_timestamp = 0.;
-    last_frame_delta = 0.;
     pressed_mouse_buttons = IntSet.empty;
     pressed_keys = StringSet.empty;
     mouse_pos = (0., 0.);

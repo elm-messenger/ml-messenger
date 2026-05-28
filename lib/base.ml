@@ -23,12 +23,7 @@ let add_common_data common_data env =
 let global_data_of_init (g : 'a global_data_init) : 'a global_data =
   { user_data = g.user_data; camera = g.camera }
 
-let get_scene_start_time r = r.Internal.scene_start_time
-let get_global_start_time r = r.Internal.global_start_time
-let get_global_start_frame r = r.Internal.global_start_frame
-let get_scene_start_frame r = r.Internal.scene_start_frame
 let get_current_timestamp r = r.Internal.current_timestamp
-let get_delta_time r = r.Internal.last_frame_delta
 let get_mouse_pos r = r.Internal.mouse_pos
 let get_pressed_mouse_buttons r = r.Internal.pressed_mouse_buttons
 let get_pressed_keys r = r.Internal.pressed_keys

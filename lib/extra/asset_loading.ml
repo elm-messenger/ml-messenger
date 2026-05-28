@@ -2,18 +2,26 @@ open Ml_regl_core
 open Messenger
 
 type init_option = unit
-type data = unit
+type data = { elapsed : float; prev_ts : float option }
 
 let init () _runtime _env _msg =
-  ((), { Scene.dead = false; post_processor = Fun.id })
+  ( { elapsed = 0.; prev_ts = None },
+    { Scene.dead = false; post_processor = Fun.id } )
 
-let update runtime env _evnt data bdata =
+let update runtime env evnt data bdata =
   let loaded, total = Base.get_loading_progress runtime in
+  let data =
+    match evnt with
+    | Regl_proto.UpdateTick ts ->
+        let delta = match data.prev_ts with None -> 0. | Some p -> ts -. p in
+        { elapsed = data.elapsed +. delta; prev_ts = Some ts }
+    | _ -> data
+  in
   ((data, { bdata with Scene.dead = loaded >= total }), [], (env, false))
 
 let updaterec _runtime env _msg data bdata = ((data, bdata), [], env)
 
-let view runtime env () _bdata =
+let view _runtime env data _bdata =
   let virtual_height =
     env.Base.global_data.camera.Ml_regl_core.Regl_common.y *. 2.
   in
@@ -25,8 +33,7 @@ let view runtime env () _bdata =
         let radius =
           2.
           +. sin
-               ((Base.get_global_start_time runtime *. 0.005)
-               +. (2. *. Float.pi *. fi /. 8.))
+               ((data.elapsed *. 0.005) +. (2. *. Float.pi *. fi /. 8.))
         in
         Regl_builtin_programs.circle
           (30. +. x, virtual_height -. 30. +. y)

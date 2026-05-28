@@ -1,7 +1,7 @@
 open Ml_regl_core
 open Messenger
 
-type data = unit
+type data = { frame : int }
 
 let comment =
   "Mode:\n\
@@ -12,17 +12,17 @@ let comment =
    5: Clock x 2, sequential\n\
    Backspace: Home"
 
-let view runtime _env () =
+let view _runtime _env data =
   Regl_common.group []
     [
       Regl_builtin_programs.clear (Color.rgb 0.55 0.9 0.55);
       Regl_builtin_programs.textbox (0., 30.) 40. comment "firacode" Color.black;
       Regl_builtin_programs.textbox (0., 900.) 30.
-        (string_of_int (Base.get_scene_start_frame runtime))
+        (string_of_int data.frame)
         "firacode" Color.black;
     ]
 
-let update runtime env evnt () =
+let update runtime env evnt data =
   let open Messenger_extra in
   let to_home = ("Home", None) in
   let soms =
@@ -41,7 +41,7 @@ let update runtime env evnt () =
             to_home;
         ]
     | KeyDown ("Digit3" | "3") ->
-        let current_view = view runtime env () in
+        let current_view = view runtime env data in
         [
           Transition_model.gen_sequential_transition_som
             (Transition_base.null_transition, 0.)
@@ -63,9 +63,14 @@ let update runtime env evnt () =
         ]
     | _ -> []
   in
-  ((), soms, env)
+  let data =
+    match evnt with
+    | Regl_proto.UpdateTick _ -> { frame = data.frame + 1 }
+    | _ -> data
+  in
+  (data, soms, env)
 
-let init _runtime _env _msg = ()
+let init _runtime _env _msg = { frame = 0 }
 
 let scenecon : (_, _, _, _, _, _, _) Scene.concrete_scene =
   { init; update; view }

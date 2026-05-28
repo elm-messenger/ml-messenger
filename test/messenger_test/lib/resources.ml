@@ -11,21 +11,34 @@ let sprite_sheet =
   List.concat
     (List.mapi
        (fun row colsize ->
-         (* [player_size] stores the number of 32px cells in each row, not
-            the max inclusive column index. The original Elm used
-            [List.range 0 colsize], but with the checked image decoder this
-            attempts e.g. row 0 col 13 at x=416 on a 416px-wide sheet. *)
+         (* [player_size] stores the number of 32px cells in each row, not the
+            max inclusive column index. The original Elm used [List.range 0
+            colsize], but with the checked image decoder this attempts e.g. row
+            0 col 13 at x=416 on a 416px-wide sheet. *)
          List.init colsize (fun col ->
-             let opts = Some { Regl_proto.mag = Some MagNearest; min = None; crop = Some ((32 * col, 32 * row), (32, 32)) } in
-             texture ?opts (Printf.sprintf "char%d%d" row col) "assets/img/sheet.png"))
+             let opts =
+               Some
+                 {
+                   Regl_proto.mag = Some MagNearest;
+                   min = None;
+                   crop = Some ((32 * col, 32 * row), (32, 32));
+                 }
+             in
+             texture ?opts
+               (Printf.sprintf "char%d%d" row col)
+               "./test/messenger_test/assets/img/sheet.png"))
        player_size)
 
 let resources =
-  [ texture "enemy" "assets/img/enemy.png";
-    texture "mask" "assets/img/mask.jpg";
-    texture "ship" "assets/img/ship.png";
-    texture "sq" "assets/img/sq.jpg";
-    audio "test" "assets/aud/test.ogg";
-    font "firacode" "assets/fonts/font_0.png" "assets/fonts/FiraCode-Regular.json";
-    data "texts" "assets/data/texts.json" ]
+  [
+    texture "enemy" "./test/messenger_test/assets/img/enemy.png";
+    texture "mask" "./test/messenger_test/assets/img/mask.jpg";
+    texture "ship" "./test/messenger_test/assets/img/ship.png";
+    texture "sheet" "./test/messenger_test/assets/img/sheet.png";
+    texture "sq" "./test/messenger_test/assets/img/sq.jpg";
+    audio "test" "./test/messenger_test/assets/aud/test.ogg";
+    font "firacode" "./test/messenger_test/assets/fonts/font_0.png"
+      "./test/messenger_test/assets/fonts/FiraCode-Regular.json";
+    data "texts" "./test/messenger_test/assets/data/texts.json";
+  ]
   @ sprite_sheet

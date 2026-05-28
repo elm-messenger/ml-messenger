@@ -26,12 +26,25 @@ let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
     view =
       (fun _runtime _env () ->
         let prompt =
-          "ml-messenger migration test\n\n1. Camera\n2. Stress\n3. SpriteSheet\n4. ConfigData\n5. Audio\n6. Interaction\n7. Transition\n8. Components\n\nBackspace returns home."
+          "ml-messenger migration test\n\n\
+           1. Camera\n\
+           2. Stress\n\
+           3. SpriteSheet\n\
+           4. ConfigData\n\
+           5. Audio\n\
+           6. Interaction\n\
+           7. Transition\n\
+           8. Components\n\n\
+           Backspace returns home."
         in
         Regl_common.group []
-          [ Regl_builtin_programs.clear (Color.rgb 1. 0.98 0.75);
-            Regl_builtin_programs.textbox (0., 30.) 30. prompt "firacode" Color.black;
-            Regl_builtin_programs.rect_texture (1200., 0.) (200., 200.) "ship" ]);
+          [
+            Regl_builtin_programs.clear (Color.rgb 1. 0.98 0.75);
+            Regl_builtin_programs.textbox (0., 30.) 30. prompt "firacode"
+              Color.black;
+            Messenger.Render_texture.render_sprite _runtime (1200., 0.)
+              (0., 200.) "ship";
+          ]);
   }
 
 let scene _msg runtime env = Scene.abstract scene_con None runtime env

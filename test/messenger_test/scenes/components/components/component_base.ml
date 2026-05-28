@@ -18,4 +18,3 @@ type component_msg =
   | RectMsg of rect_msg
   | RectReportMsg of rect_report_msg
   | NullComponentMsg
-

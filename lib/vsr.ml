@@ -17,7 +17,9 @@ let update_vsr vsr evnt =
       vsr.runtime.global_start_time <- vsr.runtime.global_start_time +. delta;
       vsr.runtime.global_start_frame <- vsr.runtime.global_start_frame + 1
   | _ -> ());
-  let new_scene, new_msg, new_env = (Scene.unroll vsr.scene).update vsr.runtime vsr.env evnt in
+  let new_scene, new_msg, new_env =
+    (Scene.unroll vsr.scene).update vsr.runtime vsr.env evnt
+  in
   ({ vsr with env = new_env; scene = new_scene }, new_msg)
 
 let view_vsr vsr = (Scene.unroll vsr.scene).view vsr.runtime vsr.env

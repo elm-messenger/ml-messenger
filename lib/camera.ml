@@ -2,11 +2,13 @@ open Ml_regl_core
 
 type t = Regl_common.camera
 
-let default ~width ~height : t = { x = width /. 2.; y = height /. 2.; zoom = 1.; rotation = 0. }
+let default ~width ~height : t =
+  { x = width /. 2.; y = height /. 2.; zoom = 1.; rotation = 0. }
 
 let origin : t = { x = 0.; y = 0.; zoom = 1.; rotation = 0. }
 
-let apply (camera : t) (renderable : Regl_common.renderable) : Regl_common.renderable =
+let apply (camera : t) (renderable : Regl_common.renderable) :
+    Regl_common.renderable =
   Regl_common.group_with_camera camera [] [ renderable ]
 
 let judge_mouse_rect ~mouse:(mx, my) ~pos:(x, y) ~size:(w, h) =
@@ -25,7 +27,8 @@ let world_to_view (camera : t) (x, y) =
   else
     let c = cos camera.rotation in
     let s = sin camera.rotation in
-    ((dx *. zoom *. c) +. (dy *. zoom *. s), (dy *. zoom *. c) -. (dx *. zoom *. s))
+    ( (dx *. zoom *. c) +. (dy *. zoom *. s),
+      (dy *. zoom *. c) -. (dx *. zoom *. s) )
 
 let view_to_world (camera : t) (x, y) =
   let zoom = if camera.zoom = 0. then 1. else camera.zoom in
@@ -41,7 +44,11 @@ let mouse_to_camera_space ~view_size:(vw, vh) camera (mx, my) =
   view_to_world camera (mx -. (vw /. 2.), my -. (vh /. 2.))
 
 let judge_mouse_rect_with_camera ~view_size ~camera ~mouse ~pos ~size =
-  judge_mouse_rect ~mouse:(mouse_to_camera_space ~view_size camera mouse) ~pos ~size
+  judge_mouse_rect
+    ~mouse:(mouse_to_camera_space ~view_size camera mouse)
+    ~pos ~size
 
 let judge_mouse_circle_with_camera ~view_size ~camera ~mouse ~center ~radius =
-  judge_mouse_circle ~mouse:(mouse_to_camera_space ~view_size camera mouse) ~center ~radius
+  judge_mouse_circle
+    ~mouse:(mouse_to_camera_space ~view_size camera mouse)
+    ~center ~radius

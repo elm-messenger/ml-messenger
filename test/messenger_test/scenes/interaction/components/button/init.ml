@@ -4,4 +4,3 @@ type init_data = {
   color : Ml_regl_core.Color.t;
   content : string;
 }
-

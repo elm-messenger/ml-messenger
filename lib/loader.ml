@@ -1,5 +1,4 @@
 let exist_scene name scenes = Hashtbl.mem scenes name
-
 let get_scene name scenes = Hashtbl.find_opt scenes name
 
 let load_scene scenest smsg model =
@@ -15,4 +14,3 @@ let load_scene_by_name name scenes smsg model =
       new_model.runtime.current_scene <- name;
       new_model
   | None -> model
-

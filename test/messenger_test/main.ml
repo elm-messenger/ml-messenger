@@ -19,4 +19,3 @@ let input : (Lib.User_data.user_data, Lib.Base.scene_msg) Ui.input =
   }
 
 let () = Ui.gen_main input
-

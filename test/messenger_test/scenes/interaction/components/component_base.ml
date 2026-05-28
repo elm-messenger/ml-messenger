@@ -1,5 +1,4 @@
 type component_target = string
-
 type base_data = unit
 
 type button_init_data = {
@@ -11,7 +10,11 @@ type button_init_data = {
 
 type button_msg = ButtonPressed | ButtonReleased
 
-type slider_init_data = { slider_init_value : float; slider_center : float * float; slider_width : float }
+type slider_init_data = {
+  slider_init_value : float;
+  slider_center : float * float;
+  slider_width : float;
+}
 
 type slider_msg = float
 

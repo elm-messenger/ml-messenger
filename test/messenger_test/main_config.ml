@@ -10,5 +10,9 @@ let fbo_num = 5
 let enabled_builtin_programs = Ui.AllBuiltinProgram
 
 let default_global_data : Lib.User_data.user_data Base.global_data_init =
-  { user_data = Lib.User_data.default; camera = Camera.default ~width:virtual_size.width ~height:virtual_size.height; volume = 0.5 }
-
+  {
+    user_data = Lib.User_data.default;
+    camera =
+      Camera.default ~width:virtual_size.width ~height:virtual_size.height;
+    volume = 0.5;
+  }

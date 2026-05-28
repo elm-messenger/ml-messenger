@@ -1,13 +1,13 @@
 # ML Messenger
 
 A functional, message-driven 2D game engine for OCaml — the OCaml port of the
-Elm [`messenger`](https://github.com/linsyking/Messenger) framework, sitting on
+Elm [`messenger`](https://github.com/elm-messenger/Messenger) framework, sitting on
 top of the `ml-regl` rendering runtime.
 
 ## Overview
 
 `ml-messenger` lets you build games out of pure, typed messages flowing
-between **Scenes**, **Components** and **Global Components**. The same OCaml
+between **Scenes** and **Components**. The same OCaml
 codebase runs on two interchangeable backends:
 
 - `Regl_js` — Js\_of\_ocaml + `regl.js`, targeting the browser

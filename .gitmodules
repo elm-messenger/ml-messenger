@@ -1,0 +1,3 @@
+[submodule "ml-regl-js"]
+	path = ml-regl-js
+	url = git@github.com:elm-messenger/ml-regl-js

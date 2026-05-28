@@ -1,6 +1,6 @@
 (executable
  (name test)
- (libraries js_of_ocaml ml-messenger)
+ (libraries js_of_ocaml regl_js ml-messenger)
  (modes js)
  (preprocess
   (pps js_of_ocaml-ppx))
@@ -9,6 +9,6 @@
 
 (test
  (name test_recursion)
- (libraries ml-messenger)
+ (libraries js_of_ocaml regl_js ml-messenger)
  (flags
   (:standard -warn-error -A)))

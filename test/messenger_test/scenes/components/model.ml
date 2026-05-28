@@ -40,7 +40,7 @@ module Rect = struct
 
   let update _runtime env evnt data basedata =
     match evnt with
-    | Regl_proto.MouseDown { button = 0; x; y } ->
+    | Regl_proto.MouseDown { button = 1; x; y } ->
         if
           Camera.judge_mouse_rect_with_camera ~view_size:(1920., 1080.)
             ~camera:env.Base.global_data.camera ~mouse:(x, y)

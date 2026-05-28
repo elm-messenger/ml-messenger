@@ -1,0 +1,5 @@
+(library
+ (name messenger_extra)
+ (libraries ml_regl_core ml-messenger)
+ (flags
+  (:standard -warn-error -A)))

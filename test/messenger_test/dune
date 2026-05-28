@@ -1,0 +1,28 @@
+(include_subdirs qualified)
+
+(executable
+ (name main)
+ (modules
+  (:standard \ main_desktop))
+ (libraries js_of_ocaml regl_js ml-messenger messenger_extra)
+ (modes js)
+ (preprocess
+  (pps js_of_ocaml-ppx))
+ (flags
+  (:standard -warn-error -A)))
+
+(executable
+ (name main_desktop)
+ (modules
+  (:standard \ main))
+ (libraries regl_desktop ml-messenger messenger_extra)
+ (modes
+  (native exe))
+ (flags
+  (:standard -warn-error -A)))
+
+(rule
+ (target main_desktop.ml)
+ (deps main.ml)
+ (action
+  (copy %{deps} %{target})))

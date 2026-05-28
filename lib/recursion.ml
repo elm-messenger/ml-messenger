@@ -1,104 +1,91 @@
-open Generalmodel
+open General_model
 
-(* Helper function to reverse a list *)
-let rev = List.rev
+let split_msgs msgs =
+  List.fold_left
+    (fun (unfinished, finished) -> function
+      | Parent x -> (unfinished, finished @ [ x ])
+      | Other (tar, msg) -> (unfinished @ [ (tar, msg) ], finished))
+    ([], []) msgs
 
-(* Filter finished messages (Parent messages) *)
-let filter_finished_msg msgs =
-  List.filter_map (function Parent x -> Some x | Other _ -> None) msgs
-
-(* Filter unfinished messages (Other messages) *)
-let filter_unfinished_msg msgs =
-  List.filter_map (function Parent _ -> None | Other msg -> Some msg) msgs
-
-(* Update one object in the list *)
-let rec update_one last_env evt objs last_objs last_msg_unfinished
+let rec update_one envro last_env evt objs last_objs last_msg_unfinished
     last_msg_finished =
   match objs with
   | ele :: rest_objs ->
       let new_obj, new_msg, (new_env, block) =
-        (unroll ele).update last_env evt
+        (unroll ele).update envro last_env evt
       in
-      let finished_msg = filter_finished_msg new_msg in
-      let unfinished_msg = filter_unfinished_msg new_msg in
-
+      let unfinished_msg, finished_msg = split_msgs new_msg in
+      let all_unfinished = last_msg_unfinished @ unfinished_msg in
+      let all_finished = last_msg_finished @ finished_msg in
       if block then
-        ( rev rest_objs @ [ new_obj ] @ last_objs,
-          ( last_msg_unfinished @ unfinished_msg,
-            last_msg_finished @ finished_msg ),
+        ( List.rev rest_objs @ (new_obj :: last_objs),
+          (all_unfinished, all_finished),
           (new_env, block) )
       else
-        update_one new_env evt rest_objs (new_obj :: last_objs)
-          (last_msg_unfinished @ unfinished_msg)
-          (last_msg_finished @ finished_msg)
+        update_one envro new_env evt rest_objs (new_obj :: last_objs)
+          all_unfinished all_finished
   | [] ->
       (last_objs, (last_msg_unfinished, last_msg_finished), (last_env, false))
 
-(* Update all objects once *)
-let update_once env evt objs = update_one env evt (rev objs) [] [] []
+let update_once envro env evt objs =
+  update_one envro env evt (List.rev objs) [] [] []
 
-(* Recursively update remaining objects *)
-let rec update_remain env (unfinished_msg, finished_msg) objs =
-  if unfinished_msg = [] then (objs, finished_msg, env)
-  else
-    let new_objs, (new_unfinished_msg, new_finished_msg), new_env =
-      List.fold_left
-        (fun (last_objs, (last_msg_unfinished, last_msg_finished), last_env) ele
-           ->
-          let msg_matched =
-            List.filter_map
-              (fun (tar, msg) ->
-                if (unroll ele).matcher tar then Some msg else None)
-              unfinished_msg
-          in
-
-          if msg_matched = [] then
-            (* No need to update *)
-            ( last_objs @ [ ele ],
-              (last_msg_unfinished, last_msg_finished),
-              last_env )
-          else
-            (* Need update *)
-            let new_obj, (new_msg_unfinished, new_msg_finished), new_env2 =
-              List.fold_left
-                (fun ( last_obj2,
-                       (last_msg_unfinished2, last_msg_finished2),
-                       last_env2 ) msg ->
-                  let new_ele, new_msgs, new_env3 =
-                    (unroll last_obj2).updaterec last_env2 msg
-                  in
-                  let finished_msgs = filter_finished_msg new_msgs in
-                  let unfinished_msgs = filter_unfinished_msg new_msgs in
-                  ( new_ele,
-                    ( last_msg_unfinished2 @ unfinished_msgs,
-                      last_msg_finished2 @ finished_msgs ),
-                    new_env3 ))
-                (ele, ([], []), last_env)
-                msg_matched
+let rec update_remain envro env (unfinished_msg, finished_msg) objs =
+  match unfinished_msg with
+  | [] -> (objs, finished_msg, env)
+  | _ ->
+      let new_objs, (new_unfinished_msg, new_finished_msg), new_env =
+        List.fold_left
+          (fun (last_objs, (last_msg_unfinished, last_msg_finished), last_env)
+               ele ->
+            let msg_matched =
+              List.filter_map
+                (fun (tar, msg) ->
+                  if (unroll ele).matcher tar then Some msg else None)
+                unfinished_msg
             in
-            ( last_objs @ [ new_obj ],
-              ( last_msg_unfinished @ new_msg_unfinished,
-                last_msg_finished @ new_msg_finished ),
-              new_env2 ))
-        ([], ([], []), env)
-        objs
-    in
-    update_remain new_env
-      (new_unfinished_msg, finished_msg @ new_finished_msg)
-      new_objs
+            match msg_matched with
+            | [] ->
+                ( last_objs @ [ ele ],
+                  (last_msg_unfinished, last_msg_finished),
+                  last_env )
+            | _ ->
+                let new_obj, (new_unfinished, new_finished), new_env2 =
+                  List.fold_left
+                    (fun (last_obj, (last_unfinished, last_finished), last_env2)
+                         msg ->
+                      let new_ele, new_msgs, new_env3 =
+                        (unroll last_obj).updaterec envro last_env2 msg
+                      in
+                      let unfinished, finished = split_msgs new_msgs in
+                      ( new_ele,
+                        (last_unfinished @ unfinished, last_finished @ finished),
+                        new_env3 ))
+                    (ele, ([], []), last_env)
+                    msg_matched
+                in
+                ( last_objs @ [ new_obj ],
+                  ( last_msg_unfinished @ new_unfinished,
+                    last_msg_finished @ new_finished ),
+                  new_env2 ))
+          ([], ([], []), env)
+          objs
+      in
+      update_remain envro new_env
+        (new_unfinished_msg, finished_msg @ new_finished_msg)
+        new_objs
 
-(* Recursively update all the objects in the List *)
-let update_objects env evt objs =
+let update_objects envro env evt objs =
   let new_objs, (new_msg_unfinished, new_msg_finished), (new_env, new_block) =
-    update_once env evt objs
+    update_once envro env evt objs
   in
   let res_obj, res_msg, res_env =
-    update_remain new_env (new_msg_unfinished, new_msg_finished) new_objs
+    update_remain envro new_env (new_msg_unfinished, new_msg_finished) new_objs
   in
   (res_obj, res_msg, (res_env, new_block))
 
-(* Recursively update all the objects in the List, but also uses target *)
-let update_objects_with_target env msgs objs = update_remain env (msgs, []) objs
+let update_objects_with_target envro env msgs objs =
+  update_remain envro env (msgs, []) objs
 
-(* Remove all objects by target *)
-let remove_objects t xs = List.filter (fun x -> not ((unroll x).matcher t)) xs
+let remove_objects tar xs =
+  List.filter (fun x -> not ((unroll x).matcher tar)) xs

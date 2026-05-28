@@ -1,34 +1,36 @@
 open Messenger
 
-type model_t = int
-type msg_t = int
-type env_t = (int, int) Base.env
-type bd_t = int
-type ren = int
-type tar = int
+type event = Ping
+type tar = Id of int
+type msg = Inc
+type som = Done
+type data = { id : int; value : int }
 
-let test_env : env_t = { global_data = 1; common_data = 2 }
-let init (env : env_t) (_ : msg_t) : model_t * bd_t = (env.common_data, 0)
+let component id =
+  let con : (_, _, _, _, _, _, _, _, _) General_model.concrete_general_model =
+    {
+      init = (fun () () _ -> ({ id; value = 0 }, ()));
+      update =
+        (fun () () Ping data bdata ->
+          ((data, bdata), [ General_model.Other (Id id, Inc) ], ((), false)));
+      updaterec =
+        (fun () () Inc data bdata ->
+          ( ({ data with value = data.value + 1 }, bdata),
+            [ General_model.Parent (SOMMsg Done) ],
+            () ));
+      view = (fun () () data () -> data.value);
+      matcher = (fun data () (Id id) -> data.id = id);
+    }
+  in
+  General_model.abstract con Inc () ()
 
-let update (env : env_t) (_ : Base.user_event) (model : model_t) (bd : bd_t) =
-  ((model, bd), [], (env, false))
-
-let updaterec (env : env_t) (_ : msg_t) (model : model_t) (bd : bd_t) =
-  ((model, bd), [], env)
-
-let view (env : env_t) (model : model_t) (bd : bd_t) : ren = 12
-let matcher (model : model_t) (bd : bd_t) (t : tar) = false
-
-let concrete_model :
-    ( model_t,
-      env_t,
-      Base.user_event,
-      tar,
-      msg_t,
-      ren,
-      bd_t,
-      int )
-    Generalmodel.concrete_general_model =
-  { init; update; updaterec; view; matcher }
-
-let abstract_model = Generalmodel.abstract concrete_model
+let () =
+  let objs, msgs, (_env, block) =
+    Recursion.update_objects () () Ping [ component 1; component 2 ]
+  in
+  assert (not block);
+  assert (List.length msgs = 2);
+  let values =
+    List.map (fun obj -> (General_model.unroll obj).view () ()) objs
+  in
+  assert (values = [ 1; 1 ])

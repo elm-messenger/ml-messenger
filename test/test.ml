@@ -1,22 +1,66 @@
-module Html = Js_of_ocaml.Dom_html
-module Dom = Js_of_ocaml.Dom
-module Js = Js_of_ocaml.Js
-module Ui = Messenger.Ui
-module Base = Messenger.Base
+open Ml_regl_core
+open Messenger
 
-let _ = print_endline "Test module loaded successfully."
+type user_data = unit
+type scene_msg = unit
 
-type model = { count : int }
+let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
+  {
+    init = (fun _ _ _ -> ());
+    update =
+      (fun _ env evnt () ->
+        let soms =
+          match evnt with
+          | Regl_proto.KeyDown "Space" ->
+              [ Scene.SOMSaveValue ("ml-messenger-demo", "space") ]
+          | _ -> []
+        in
+        ((), soms, env));
+    view =
+      (fun runtime _ () ->
+        let mouse = Base.get_mouse_pos runtime in
+        let inside =
+          Camera.judge_mouse_rect ~mouse ~pos:(260., 220.) ~size:(280., 160.)
+        in
+        let color =
+          if inside then Color.rgb 0.2 0.8 0.35 else Color.rgb 0.25 0.45 0.9
+        in
+        Regl_common.group []
+          [
+            Regl_builtin_programs.clear Color.white;
+            Regl_builtin_programs.rect (260., 220.) (280., 160.) color;
+            Regl_builtin_programs.circle (400., 300.) 48. Color.red;
+          ]);
+  }
 
-let init : Ui.init_env -> model = fun _ -> { count = 2 }
+let scene_storage _ runtime env = Scene.abstract scene_con None runtime env
 
-let update : Base.world_event -> model -> model * Ui.side_effect =
- fun _ model -> ({ count = model.count + 1 }, { renderable = true })
+let scenes : (user_data, scene_msg) Scene.all_scenes =
+  let tbl = Hashtbl.create 1 in
+  Hashtbl.add tbl "main" scene_storage;
+  tbl
 
-let debug : model -> string =
- fun model -> Printf.sprintf "Count: %d" model.count
+let input : (user_data, scene_msg) Ui.input =
+  {
+    config =
+      {
+        init_scene = "main";
+        init_scene_msg = None;
+        virtual_size = { Ui.width = 800.; height = 600. };
+        fbo_num = 5;
+        enabled_program = Ui.AllBuiltinProgram;
+        time_interval = Regl_proto.AnimationFrame;
+        default_global_data =
+          {
+            Base.user_data = ();
+            camera = Camera.default ~width:800. ~height:600.;
+            volume = 1.;
+          };
+        debug = false;
+      };
+    resources = [];
+    scenes;
+    global_components = [];
+  }
 
-(* Define the UI module with the init, update, and debug functions *)
-
-let ui : model Ui.ui = { init; update; debug }
-let _ = Messenger.Ui.JsExport.export ui
+let () = Ui.gen_main input

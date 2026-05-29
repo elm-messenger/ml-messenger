@@ -1,8 +1,9 @@
 # ML Messenger
 
 A functional, message-driven 2D game engine for OCaml — the OCaml port of the
-Elm [`messenger`](https://github.com/elm-messenger/Messenger) framework, sitting on
-top of the `ml-regl` rendering runtime.
+Elm [`messenger`](https://github.com/elm-messenger/Messenger) framework, sitting
+on top of the [`ml-regl`](https://github.com/elm-messenger/ml-regl) rendering
+backend.
 
 ## Overview
 
@@ -28,8 +29,10 @@ fully portable across web and desktop.
   the `Env` through, then dispatches `SceneOutputMsg`s via `SOMHandler` and
   renders the scene through `PostProcessor` + `ViewHandler`.
 - **Backend** is an abstract interface (`Regl_backend`); the JS and desktop
-  implementations exchange `Regl_event`s and side effects with the core
-  using a shared Protobuf-encoded protocol.
+  implementations live in the
+  [`ml-regl`](https://github.com/elm-messenger/ml-regl) repository, and
+  exchange `Regl_event`s and side effects with the core using a shared
+  Protobuf-encoded protocol.
 
 
 ## Building

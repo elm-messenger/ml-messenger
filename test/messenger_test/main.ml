@@ -11,7 +11,7 @@ let input : (Lib.User_data.user_data, Lib.Base.scene_msg) Ui.input =
         enabled_program = Main_config.enabled_builtin_programs;
         time_interval = Main_config.time_interval;
         default_global_data = Main_config.default_global_data;
-        debug = Main_config.debug;
+        app_name = Main_config.app_name;
       };
     resources = Lib.Resources.resources;
     scenes = Scenes.All_scenes.all_scenes;

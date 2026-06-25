@@ -17,7 +17,7 @@ type ('userdata, 'scenemsg) user_config = {
   enabled_program : enabled_builtin_program;
   time_interval : Regl_proto.time_interval;
   default_global_data : 'userdata Base.global_data_init;
-  debug : bool;
+  app_name : string option;
 }
 
 type ('userdata, 'scenemsg) input = {
@@ -94,6 +94,7 @@ let init input () =
       fbo_num = input.config.fbo_num;
       builtin_programs = builtin_programs input.config.enabled_program;
       window = Regl_proto.default_window_config;
+      app_name = input.config.app_name;
     }
   in
   let resource_cmds =
@@ -137,12 +138,12 @@ let handle_regl_recv input model msg =
   | Regl_proto.REGLTextureLoaded t ->
       Resources.save_sprite r.sprites t.name t;
       r.loaded_res_num <- r.loaded_res_num + 1
-  | REGLTextureLoadFail name ->
+  | REGLTextureLoadFail { name; _ } ->
       r.startup_failed <- ("texture:" ^ name) :: r.startup_failed
   | REGLFontLoaded name ->
       r.fonts <- Internal.StringSet.add name r.fonts;
       r.loaded_res_num <- r.loaded_res_num + 1
-  | REGLFontLoadFail name ->
+  | REGLFontLoadFail { name; _ } ->
       r.startup_failed <- ("font:" ^ name) :: r.startup_failed
   | REGLProgramCreated name ->
       r.programs <- Internal.StringSet.add name r.programs;
@@ -262,8 +263,7 @@ let game_update input evnt model =
     handle_soms input (gcsom @ scenesom) model3
 
 let update_input_state (r : Internal.runtime) = function
-  | Regl_proto.UpdateTick ts ->
-      r.current_timestamp <- ts
+  | Regl_proto.UpdateTick ts -> r.current_timestamp <- ts
   | MouseDown { button; x; y } ->
       r.pressed_mouse_buttons <-
         Internal.IntSet.add button r.pressed_mouse_buttons;

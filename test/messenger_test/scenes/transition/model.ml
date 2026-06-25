@@ -17,8 +17,7 @@ let view _runtime _env data =
     [
       Regl_builtin_programs.clear (Color.rgb 0.55 0.9 0.55);
       Regl_builtin_programs.textbox (0., 30.) 40. comment "firacode" Color.black;
-      Regl_builtin_programs.textbox (0., 900.) 30.
-        (string_of_int data.frame)
+      Regl_builtin_programs.textbox (0., 900.) 30. (string_of_int data.frame)
         "firacode" Color.black;
     ]
 

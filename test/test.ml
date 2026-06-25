@@ -56,7 +56,7 @@ let input : (user_data, scene_msg) Ui.input =
             camera = Camera.default ~width:800. ~height:600.;
             volume = 1.;
           };
-        debug = false;
+        app_name = None;
       };
     resources = [];
     scenes;

@@ -4,10 +4,10 @@ open Messenger
 let init_scene = "Home"
 let init_scene_msg = None
 let virtual_size : Ui.size = { width = 1920.; height = 1080. }
-let debug = true
 let time_interval = Regl_proto.AnimationFrame
 let fbo_num = 5
 let enabled_builtin_programs = Ui.AllBuiltinProgram
+let app_name = Some "Messenger Test"
 
 let default_global_data : Lib.User_data.user_data Base.global_data_init =
   {

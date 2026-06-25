@@ -11,8 +11,7 @@ let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
         match evnt with
         | Regl_proto.KeyDown "Backspace" ->
             (data, [ Scene.SOMChangeScene (None, "Home") ], env)
-        | Regl_proto.UpdateTick _ ->
-            ({ frame = data.frame + 1 }, [], env)
+        | Regl_proto.UpdateTick _ -> ({ frame = data.frame + 1 }, [], env)
         | _ -> (data, [], env));
     view =
       (fun runtime _env data ->

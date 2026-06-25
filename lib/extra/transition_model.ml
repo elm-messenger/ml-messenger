@@ -136,12 +136,12 @@ let update runtime env evnt data bdata =
         { data with old_vsr = Some new_vsr }
   in
   match evnt with
-  | Regl_proto.UpdateTick ts ->
+  | Regl_proto.UpdateTick ts -> (
       let dt = match data.prev_ts with None -> 0. | Some p -> ts -. p in
       let data = { data with prev_ts = Some ts } in
-      (match data.transition with
-       | MTransition mt -> update_m_transition runtime env mt data bdata dt
-       | NMTransition nt -> update_nm_transition runtime env nt data bdata dt)
+      match data.transition with
+      | MTransition mt -> update_m_transition runtime env mt data bdata dt
+      | NMTransition nt -> update_nm_transition runtime env nt data bdata dt)
   | _ -> ((data, bdata), [], (env, false))
 
 let updaterec _runtime env _msg data bdata = ((data, bdata), [], env)

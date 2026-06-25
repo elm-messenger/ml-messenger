@@ -31,9 +31,7 @@ let view _runtime env data _bdata =
         let x = 15. *. cos (Float.pi /. 4. *. fi) in
         let y = 15. *. sin (Float.pi /. 4. *. fi) in
         let radius =
-          2.
-          +. sin
-               ((data.elapsed *. 0.005) +. (2. *. Float.pi *. fi /. 8.))
+          2. +. sin ((data.elapsed *. 0.005) +. (2. *. Float.pi *. fi /. 8.))
         in
         Regl_builtin_programs.circle
           (30. +. x, virtual_height -. 30. +. y)

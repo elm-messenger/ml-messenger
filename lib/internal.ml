@@ -19,7 +19,6 @@ type runtime = {
   sprites : (string, Regl_proto.texture) Hashtbl.t;
   mutable loaded_res_num : int;
   mutable tot_res_num : int;
-  mutable startup_failed : string list;
   mutable fonts : StringSet.t;
   mutable programs : StringSet.t;
   audio_repo : audio_repo;
@@ -42,7 +41,6 @@ let empty_runtime () =
     sprites = Hashtbl.create 16;
     loaded_res_num = 0;
     tot_res_num = 0;
-    startup_failed = [];
     fonts = StringSet.empty;
     programs = StringSet.empty;
     audio_repo = empty_audio_repo ();

@@ -61,25 +61,18 @@ let make_initial_model input runtime =
     Model.runtime;
     env = { Base.global_data; common_data = Scene.empty_scene () };
     global_components = [];
-    started = false;
   }
 
-let maybe_start input model =
-  if
-    model.Model.started
-    || model.runtime.loaded_res_num < model.runtime.tot_res_num
-    || model.runtime.startup_failed <> []
-  then model
-  else
-    let model =
-      Loader.load_scene_by_name input.config.init_scene input.scenes
-        input.config.init_scene_msg model
-    in
-    let env_for_gc = model.env in
-    let gcs =
-      List.map (fun gc -> gc model.runtime env_for_gc) input.global_components
-    in
-    { model with global_components = gcs; started = true }
+let load_initial_scene_and_gcs input model =
+  let model =
+    Loader.load_scene_by_name input.config.init_scene input.scenes
+      input.config.init_scene_msg model
+  in
+  let env_for_gc = model.env in
+  let gcs =
+    List.map (fun gc -> gc model.runtime env_for_gc) input.global_components
+  in
+  { model with global_components = gcs }
 
 let init input () =
   let runtime = Internal.empty_runtime () in
@@ -107,30 +100,24 @@ let init input () =
     :: Regl_proto.config_regl (ConfigTimeInterval input.config.time_interval)
     :: resource_cmds
   in
-  (maybe_start input model, outputs)
+  (load_initial_scene_and_gcs input model, outputs)
 
 let post_process x xs = List.fold_left (fun acc f -> f acc) x xs
 
 let view input model =
   ignore input;
-  if not model.Model.started then Regl_common.group [] []
-  else
-    let scene_view =
-      (Scene.unroll model.env.common_data).view model.runtime
-        (Base.remove_common_data model.env)
-    in
-    let gc_view =
-      General_model.view_model_list model.runtime model.env
-        model.global_components
-    in
-    let scene_with_camera =
-      Camera.apply model.env.global_data.camera
-        (post_process scene_view
-           (Global_component.combine_pp model.global_components))
-    in
-    Regl_common.group [] (scene_with_camera :: gc_view)
-
-let handle_resource_loaded input model = maybe_start input model
+  let env = model.Model.env in
+  let runtime = model.Model.runtime in
+  let global_components = model.Model.global_components in
+  let scene_view =
+    (Scene.unroll env.common_data).view runtime (Base.remove_common_data env)
+  in
+  let gc_view = General_model.view_model_list runtime env global_components in
+  let scene_with_camera =
+    Camera.apply env.global_data.camera
+      (post_process scene_view (Global_component.combine_pp global_components))
+  in
+  Regl_common.group [] (scene_with_camera :: gc_view)
 
 let handle_regl_recv input model msg =
   let r = model.Model.runtime in
@@ -138,18 +125,15 @@ let handle_regl_recv input model msg =
   | Regl_proto.REGLTextureLoaded t ->
       Resources.save_sprite r.sprites t.name t;
       r.loaded_res_num <- r.loaded_res_num + 1
-  | REGLTextureLoadFail { name; _ } ->
-      r.startup_failed <- ("texture:" ^ name) :: r.startup_failed
+  | REGLTextureLoadFail _ -> ()
   | REGLFontLoaded name ->
       r.fonts <- Internal.StringSet.add name r.fonts;
       r.loaded_res_num <- r.loaded_res_num + 1
-  | REGLFontLoadFail { name; _ } ->
-      r.startup_failed <- ("font:" ^ name) :: r.startup_failed
+  | REGLFontLoadFail _ -> ()
   | REGLProgramCreated name ->
       r.programs <- Internal.StringSet.add name r.programs;
       r.loaded_res_num <- r.loaded_res_num + 1
-  | REGLProgramCreateFail name ->
-      r.startup_failed <- ("program:" ^ name) :: r.startup_failed
+  | REGLProgramCreateFail _ -> ()
   | REGLFileLoaded { path; data } ->
       let keys =
         Option.value
@@ -162,11 +146,11 @@ let handle_regl_recv input model msg =
           r.loaded_res_num <- r.loaded_res_num + 1)
         keys;
       Hashtbl.remove r.pending_data_paths path
-  | REGLFileLoadFailed { path; reason } ->
-      r.startup_failed <- ("file:" ^ path ^ ":" ^ reason) :: r.startup_failed
+  | REGLFileLoadFailed _ -> ()
   | REGLValueRead { key; value } -> Hashtbl.replace r.local_values key value
   | REGLValueReadMissing key -> Hashtbl.remove r.local_values key);
-  (handle_resource_loaded input model, [])
+  ignore input;
+  (model, [])
 
 let handle_audio_msg input model msg =
   let r = model.Model.runtime in
@@ -179,10 +163,10 @@ let handle_audio_msg input model msg =
       in
       Hashtbl.replace r.audio_repo.audio key source;
       r.loaded_res_num <- r.loaded_res_num + 1
-  | AudioLoadFailed { audio_url; _ } ->
-      r.startup_failed <- ("audio:" ^ audio_url) :: r.startup_failed
+  | AudioLoadFailed _ -> ()
   | AudioContextReady _ -> ());
-  (handle_resource_loaded input model, [])
+  ignore input;
+  (model, [])
 
 let rec handle_som input som model =
   let r = model.Model.runtime in
@@ -241,26 +225,27 @@ and handle_soms input soms model =
     (model, []) soms
 
 let game_update input evnt model =
-  if not model.Model.started then (model, [])
-  else
-    let gc1 = Global_component.filter_alive_gc model.global_components in
-    let gc2, gcsompre, (env2, block) =
-      Recursion.update_objects model.runtime model.env evnt gc1
-    in
-    let gcsom = General_model.filter_som gcsompre in
-    let model1 = { model with env = env2; global_components = gc2 } in
-    let scenesom, model2 =
-      if block then ([], model1)
-      else
-        let scene, psom, env =
-          (Scene.unroll env2.common_data).update model.runtime
-            (Base.remove_common_data env2)
-            evnt
-        in
-        (psom, { model1 with env = Base.add_common_data scene env })
-    in
-    let model3 = model2 in
-    handle_soms input (gcsom @ scenesom) model3
+  let runtime = model.Model.runtime in
+  let env = model.Model.env in
+  let global_components = model.Model.global_components in
+  let gc1 = Global_component.filter_alive_gc global_components in
+  let gc2, gcsompre, (env2, block) =
+    Recursion.update_objects runtime env evnt gc1
+  in
+  let gcsom = General_model.filter_som gcsompre in
+  let model1 = { model with env = env2; global_components = gc2 } in
+  let scenesom, model2 =
+    if block then ([], model1)
+    else
+      let scene, psom, env =
+        (Scene.unroll env2.common_data).update runtime
+          (Base.remove_common_data env2)
+          evnt
+      in
+      (psom, { model1 with env = Base.add_common_data scene env })
+  in
+  let model3 = model2 in
+  handle_soms input (gcsom @ scenesom) model3
 
 let update_input_state (r : Internal.runtime) = function
   | Regl_proto.UpdateTick ts -> r.current_timestamp <- ts

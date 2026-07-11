@@ -8,6 +8,7 @@ let input : (Lib.User_data.user_data, Lib.Base.scene_msg) Ui.input =
         init_scene_msg = Main_config.init_scene_msg;
         virtual_size = Main_config.virtual_size;
         fbo_num = Main_config.fbo_num;
+        max_assets_per_frame = Main_config.max_assets_per_frame;
         enabled_program = Main_config.enabled_builtin_programs;
         time_interval = Main_config.time_interval;
         default_global_data = Main_config.default_global_data;

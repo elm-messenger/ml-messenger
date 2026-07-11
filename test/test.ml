@@ -48,6 +48,7 @@ let input : (user_data, scene_msg) Ui.input =
         init_scene_msg = None;
         virtual_size = { Ui.width = 800.; height = 600. };
         fbo_num = 5;
+        max_assets_per_frame = 4;
         enabled_program = Ui.AllBuiltinProgram;
         time_interval = Regl_proto.AnimationFrame;
         default_global_data =

@@ -6,6 +6,7 @@ let init_scene_msg = None
 let virtual_size : Ui.size = { width = 1920.; height = 1080. }
 let time_interval = Regl_proto.AnimationFrame
 let fbo_num = 5
+let max_assets_per_frame = 4
 let enabled_builtin_programs = Ui.AllBuiltinProgram
 let app_name = Some "Messenger Test"
 

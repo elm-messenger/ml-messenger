@@ -2,10 +2,10 @@ open Ml_regl_core
 open Messenger
 
 type init_option = unit
-type data = { elapsed : float; prev_ts : float option }
+type data = { elapsed : float; prev_ts : float option; configured : bool }
 
 let init () _runtime _env _msg =
-  ( { elapsed = 0.; prev_ts = None },
+  ( { elapsed = 0.; prev_ts = None; configured = false },
     { Scene.dead = false; post_processor = Fun.id } )
 
 let update runtime env evnt data bdata =
@@ -14,10 +14,26 @@ let update runtime env evnt data bdata =
     match evnt with
     | Regl_proto.UpdateTick ts ->
         let delta = match data.prev_ts with None -> 0. | Some p -> ts -. p in
-        { elapsed = data.elapsed +. delta; prev_ts = Some ts }
+        { data with elapsed = data.elapsed +. delta; prev_ts = Some ts }
     | _ -> data
   in
-  ((data, { bdata with Scene.dead = loaded >= total }), [], (env, false))
+  let done_loading = loaded >= total in
+  let first_update = not data.configured in
+  let data = { data with configured = true } in
+  let msgs =
+    (if first_update then
+       [
+         General_model.Parent (SOMMsg (Scene.SOMChangeMaxAssetsPerFrame 0));
+       ]
+     else [])
+    @
+    if done_loading then
+      [
+        General_model.Parent (SOMMsg (Scene.SOMChangeMaxAssetsPerFrame 4));
+      ]
+    else []
+  in
+  ((data, { bdata with Scene.dead = done_loading }), msgs, (env, false))
 
 let updaterec _runtime env _msg data bdata = ((data, bdata), [], env)
 

@@ -14,6 +14,7 @@ type ('userdata, 'scenemsg) user_config = {
   init_scene_msg : 'scenemsg option;
   virtual_size : size;
   fbo_num : int;
+  max_assets_per_frame : int;
   enabled_program : enabled_builtin_program;
   time_interval : Regl_proto.time_interval;
   default_global_data : 'userdata Base.global_data_init;
@@ -98,6 +99,8 @@ let init input () =
   let outputs =
     Regl_proto.start_regl start_config
     :: Regl_proto.config_regl (ConfigTimeInterval input.config.time_interval)
+    :: Regl_proto.config_regl
+         (ConfigMaxAssetsPerFrame input.config.max_assets_per_frame)
     :: resource_cmds
   in
   (load_initial_scene_and_gcs input model, outputs)
@@ -208,6 +211,9 @@ let rec handle_som input som model =
       handle_soms input (General_model.filter_som som1) model1
   | SOMChangeFPS fps ->
       (model, [ Regl_proto.config_regl (ConfigTimeInterval fps) ])
+  | SOMChangeMaxAssetsPerFrame max_items ->
+      ( model,
+        [ Regl_proto.config_regl (ConfigMaxAssetsPerFrame max_items) ] )
   | SOMLoadResource (key, res) ->
       r.tot_res_num <- r.tot_res_num + 1;
       let cmd = load_resource_command r key res in

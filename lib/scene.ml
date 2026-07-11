@@ -37,6 +37,7 @@ and ('scenemsg, 'userdata) scene_output_msg =
   | SOMUnloadGC of gc_target
   | SOMCallGC of gc_target * gc_msg
   | SOMChangeFPS of Regl_proto.time_interval
+  | SOMChangeMaxAssetsPerFrame of int
   | SOMLoadResource of string * Resources.resource_def
   | SOMSaveValue of string * string
   | SOMReadValue of string

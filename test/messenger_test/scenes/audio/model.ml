@@ -14,7 +14,7 @@ let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
               [ Scene.SOMChangeScene (None, "Home") ]
           | KeyDown ("Space" | "Enter") ->
               [ Scene.SOMPlayAudio (0, "test", Audio_base.A_once None) ]
-          | KeyDown "KeyS" -> [ Scene.SOMStopAudio Audio_base.All_audio ]
+          | KeyDown "S" -> [ Scene.SOMStopAudio Audio_base.All_audio ]
           | _ -> []
         in
         ((), soms, env));

@@ -5,11 +5,11 @@
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github elm-messenger/ml-messenger))
 
-(authors "Author Name <author@example.com>")
+(authors "Yiming Xiang <yiming@cs.utexas.edu>")
 
-(maintainers "Maintainer Name <maintainer@example.com>")
+(maintainers "Yiming Xiang <yiming@cs.utexas.edu>")
 
 (license LICENSE)
 
@@ -17,9 +17,9 @@
 
 (package
  (name ml-messenger)
- (synopsis "A short synopsis")
- (description "A longer description")
- (depends ocaml)
+ (synopsis "A functional, message-driven 2D game engine for OCaml.")
+ (description "The OCaml port of the Elm messenger framework, sitting on top of the ml-regl rendering backend.")
+ (depends ocaml ppxlib)
  (allow_empty)
  (tags
   ("add topics" "to describe" your project)))

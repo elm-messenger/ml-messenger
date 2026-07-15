@@ -1,5 +1,6 @@
 (executable
  (name test)
+ (modules test)
  (libraries js_of_ocaml regl_js ml-messenger)
  (modes js)
  (preprocess
@@ -24,12 +25,18 @@
 
 (test
  (name test_recursion)
+ (modules test_recursion)
  (libraries js_of_ocaml regl_js ml-messenger)
  (flags
   (:standard -warn-error -A)))
 
-(test
+(executable
  (name test_portable_component)
- (libraries js_of_ocaml regl_js ml-messenger messenger_extra)
+ (modules test_portable_component)
+ (libraries regl_desktop ml-messenger messenger_extra)
+ (modes
+  (native exe))
+ (preprocess
+  (pps ml-messenger.ppx_messenger_components))
  (flags
   (:standard -warn-error -A)))

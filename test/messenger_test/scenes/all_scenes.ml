@@ -15,5 +15,6 @@ let all_scenes : (user_data, scene_msg) Messenger.Scene.all_scenes =
       ("Interaction", Interaction.Model.scene);
       ("Transition", Transition.Model.scene);
       ("Components", Components.Model.scene);
+      ("PortableComponents", Portable_components.Model.scene);
     ];
   tbl

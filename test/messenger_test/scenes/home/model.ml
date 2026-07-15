@@ -20,6 +20,7 @@ let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
           | KeyDown ("Digit6" | "6") -> change "Interaction"
           | KeyDown ("Digit7" | "7") -> change "Transition"
           | KeyDown ("Digit8" | "8") -> change "Components"
+          | KeyDown ("Digit9" | "9") -> change "PortableComponents"
           | _ -> []
         in
         ((), soms, env));
@@ -34,7 +35,8 @@ let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
            5. Audio\n\
            6. Interaction\n\
            7. Transition\n\
-           8. Components\n\n\
+           8. Components\n\
+           9. PortableComponents\n\n\
            Backspace returns home."
         in
         Regl_common.group []

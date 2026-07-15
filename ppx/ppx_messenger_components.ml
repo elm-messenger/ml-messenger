@@ -24,26 +24,6 @@ let remove_msg_suffix name =
 
 let module_name_of_constructor name = remove_msg_suffix name ^ "_component"
 let expr_of_longident ~loc lid = pexp_ident ~loc { loc; txt = lid }
-let attr_name attr = attr.attr_name.txt
-let portable_attr_name = "portable"
-
-let parse_portable_attr attr =
-  let loc = attr.attr_loc in
-  match attr.attr_payload with
-  | PStr
-      [
-        {
-          pstr_desc =
-            Pstr_eval
-              ({ pexp_desc = Pexp_ident component; pexp_attributes = []; _ }, []);
-          _;
-        };
-      ] ->
-      Some component
-  | _ ->
-      loc_errorf ~loc
-        "[@portable] expects a component value path, for example [@portable \
-         Button.component]"
 
 let parse_name ~loc = function
   | { pexp_desc = Pexp_construct ({ txt = Lident name; loc }, None); _ } ->

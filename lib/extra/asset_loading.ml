@@ -22,15 +22,11 @@ let update runtime env evnt data bdata =
   let data = { data with configured = true } in
   let msgs =
     (if first_update then
-       [
-         General_model.Parent (SOMMsg (Scene.SOMChangeMaxAssetsPerFrame 0));
-       ]
+       [ General_model.Parent (SOMMsg (Scene.SOMChangeMaxAssetsPerFrame 0)) ]
      else [])
     @
     if done_loading then
-      [
-        General_model.Parent (SOMMsg (Scene.SOMChangeMaxAssetsPerFrame 4));
-      ]
+      [ General_model.Parent (SOMMsg (Scene.SOMChangeMaxAssetsPerFrame 4)) ]
     else []
   in
   ((data, { bdata with Scene.dead = done_loading }), msgs, (env, false))

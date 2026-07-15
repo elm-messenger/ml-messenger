@@ -212,8 +212,7 @@ let rec handle_som input som model =
   | SOMChangeFPS fps ->
       (model, [ Regl_proto.config_regl (ConfigTimeInterval fps) ])
   | SOMChangeMaxAssetsPerFrame max_items ->
-      ( model,
-        [ Regl_proto.config_regl (ConfigMaxAssetsPerFrame max_items) ] )
+      (model, [ Regl_proto.config_regl (ConfigMaxAssetsPerFrame max_items) ])
   | SOMLoadResource (key, res) ->
       r.tot_res_num <- r.tot_res_num + 1;
       let cmd = load_resource_command r key res in

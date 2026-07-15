@@ -27,3 +27,9 @@
  (libraries js_of_ocaml regl_js ml-messenger)
  (flags
   (:standard -warn-error -A)))
+
+(test
+ (name test_portable_component)
+ (libraries js_of_ocaml regl_js ml-messenger messenger_extra)
+ (flags
+  (:standard -warn-error -A)))

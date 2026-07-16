@@ -22,8 +22,9 @@ let init runtime env _msg =
     components =
       [
         Components.Panel.Model.component (PanelMsg Panel_msg.Init) runtime env;
-        Badge_component.component ~target:"badge" ~map_target:Fun.id
-          (Pcomp.Badge.Model.Init "portable badge") runtime env;
+        Badge_component.component ~matcher:(String.equal "badge")
+          ~map_target:Fun.id (Pcomp.Badge.Model.Init "portable badge") runtime
+          env;
       ];
     last_panel_count = 0;
   }

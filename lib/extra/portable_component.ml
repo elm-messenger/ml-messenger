@@ -28,16 +28,14 @@ type ('common, 'userdata, 'msg, 'scenemsg, 'data) concrete_portable_component = 
     Regl_common.renderable * int;
 }
 
-let default_target_equal = ( = )
-
 let map_msg ~wrap_msg ~map_target = function
   | General_model.Parent (OtherMsg msg) ->
       General_model.Parent (OtherMsg (wrap_msg msg))
   | Parent (SOMMsg som) -> Parent (SOMMsg som)
   | Other (target, msg) -> Other (map_target target, wrap_msg msg)
 
-let adapt ?(target_equal = default_target_equal) ~target ~map_target ~wrap_msg
-    ~unwrap_msg pcomp init_msg runtime env =
+let adapt ~matcher ~map_target ~wrap_msg ~unwrap_msg pcomp init_msg runtime env
+    =
   let init runtime env _msg = (pcomp.init runtime env init_msg, ()) in
   let update runtime env evt data () =
     let data, msgs, res = pcomp.update runtime env evt data in
@@ -51,7 +49,7 @@ let adapt ?(target_equal = default_target_equal) ~target ~map_target ~wrap_msg
         ((data, ()), List.map (map_msg ~wrap_msg ~map_target) msgs, env)
   in
   let view runtime env data () = pcomp.view runtime env data in
-  let matcher _data () tar = target_equal target tar in
+  let matcher _data () tar = matcher tar in
   Component.gen_component
     { init; update; updaterec; view; matcher }
     (wrap_msg init_msg) runtime env

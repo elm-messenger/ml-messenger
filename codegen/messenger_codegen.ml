@@ -263,9 +263,9 @@ let base_ml (scenes : scene list) (groups : group list) =
               Buffer.add_string b "          | _ -> None\n";
             Buffer.add_string b
               "\n\
-              \        let component ~target ~map_target init_msg runtime env =\n";
+              \        let component ~matcher ~map_target init_msg runtime env =\n";
             Buffer.add_string b
-              "          Messenger_extra.Portable_component.adapt ~target \
+              "          Messenger_extra.Portable_component.adapt ~matcher \
                ~map_target ~wrap_msg\n";
             let module_path = require_component_module c in
             Buffer.add_string b

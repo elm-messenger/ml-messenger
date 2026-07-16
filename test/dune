@@ -29,12 +29,3 @@
  (libraries js_of_ocaml regl_js ml-messenger)
  (flags
   (:standard -warn-error -A)))
-
-(executable
- (name test_portable_component)
- (modules test_portable_component)
- (libraries regl_desktop ml-messenger messenger_extra)
- (modes
-  (native exe))
- (flags
-  (:standard -warn-error -A)))

@@ -1,0 +1,3 @@
+[scene]
+name = "ConfigData"
+module = "Scenes.Config_data.Model"

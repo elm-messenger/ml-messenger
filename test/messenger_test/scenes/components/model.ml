@@ -80,7 +80,7 @@ type child_component =
     rect_target,
     rect_msg,
     rect_base_data,
-    Lib.Base.scene_msg )
+    Mgl.Base.scene_msg )
   Component.abstract_component
 
 type layer_data = {
@@ -143,7 +143,7 @@ type layer_component =
     layer_target,
     layer_msg,
     unit,
-    Lib.Base.scene_msg )
+    Mgl.Base.scene_msg )
   Component.abstract_component
 
 type data = { layers : layer_component list; last_clicked : int option }

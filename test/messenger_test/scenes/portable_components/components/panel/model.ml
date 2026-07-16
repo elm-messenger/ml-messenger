@@ -1,5 +1,6 @@
 open Ml_regl_core
 open Messenger
+module Component_base = Mgl.Base.Components.Portable_components.Component_base
 open Component_base
 module Msg = Panel_msg
 

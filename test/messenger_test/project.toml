@@ -1,0 +1,16 @@
+[main]
+init_scene = "Home"
+resources = "Lib.Resources.resources"
+global_components = "Global_components.all_global_components ()"
+virtual_width = 1920.0
+virtual_height = 1080.0
+fbo_num = 5
+max_assets_per_frame = 4
+enabled_program = "all"
+time_interval = "animation_frame"
+app_name = "Messenger Test"
+
+[main.default_global_data]
+user_data = "Lib.User_data.default"
+camera = "default"
+volume = 0.5

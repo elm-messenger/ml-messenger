@@ -1,19 +1,18 @@
 (include_subdirs qualified)
 
-(library
- (name messenger_test_lib)
- (modules
-  (:standard \ main main_desktop))
- (libraries ml-messenger messenger_extra)
- (preprocess
-  (pps ml-messenger.ppx_messenger_components))
- (flags
-  (:standard -warn-error -A)))
+(rule
+ (targets mgl_base.ml mgl_all.ml mgl.ml)
+ (deps
+  project.toml
+  (glob_files_rec **/config.toml))
+ (action
+  (run %{bin:messenger_codegen} --root . --out-dir .)))
 
 (executable
  (name main)
- (modules main)
- (libraries js_of_ocaml regl_js ml-messenger messenger_extra messenger_test_lib)
+ (modules
+  (:standard \ main_desktop))
+ (libraries js_of_ocaml regl_js ml-messenger messenger_extra)
  (modes js)
  (preprocess
   (pps js_of_ocaml-ppx))
@@ -22,9 +21,16 @@
 
 (executable
  (name main_desktop)
- (modules main_desktop)
- (libraries regl_desktop ml-messenger messenger_extra messenger_test_lib)
+ (modules
+  (:standard \ main))
+ (libraries regl_desktop ml-messenger messenger_extra)
  (modes
   (native exe))
  (flags
   (:standard -warn-error -A)))
+
+(rule
+ (target main_desktop.ml)
+ (deps main.ml)
+ (action
+  (copy %{deps} %{target})))

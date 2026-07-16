@@ -1,0 +1,3 @@
+[scene]
+name = "Transition"
+module = "Scenes.Transition.Model"

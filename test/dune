@@ -36,7 +36,5 @@
  (libraries regl_desktop ml-messenger messenger_extra)
  (modes
   (native exe))
- (preprocess
-  (pps ml-messenger.ppx_messenger_components))
  (flags
   (:standard -warn-error -A)))

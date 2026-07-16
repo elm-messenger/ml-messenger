@@ -13,7 +13,7 @@ bug-reports: "https://github.com/elm-messenger/ml-messenger/issues"
 depends: [
   "dune" {>= "3.19"}
   "ocaml"
-  "ppxlib"
+  "otoml"
   "odoc" {with-doc}
 ]
 build: [

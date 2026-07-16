@@ -8,7 +8,7 @@ type component =
     CB.component_target,
     CB.component_msg,
     CB.base_data,
-    Lib.Base.scene_msg )
+    Mgl.Base.scene_msg )
   Component.abstract_component
 
 type data = {

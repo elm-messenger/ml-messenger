@@ -1,1 +1,1 @@
-let () = Messenger_test_lib.App.run ()
+let () = Messenger.Ui.gen_main Mgl.All.input

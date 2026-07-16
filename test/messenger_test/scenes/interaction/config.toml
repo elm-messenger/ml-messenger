@@ -1,0 +1,3 @@
+[scene]
+name = "Interaction"
+module = "Scenes.Interaction.Model"

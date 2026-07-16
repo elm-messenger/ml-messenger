@@ -1,0 +1,3 @@
+[scene]
+name = "Audio"
+module = "Scenes.Audio.Model"

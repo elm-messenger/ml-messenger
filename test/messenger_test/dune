@@ -1,7 +1,7 @@
 (include_subdirs qualified)
 
 (rule
- (targets mgl_base.ml mgl_all.ml mgl.ml)
+ (targets mgl_base.ml mgl_all.ml)
  (deps
   project.toml
   (glob_files_rec **/config.toml))

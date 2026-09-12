@@ -1,6 +1,6 @@
 open Ml_regl_core
 open Messenger
-module Component_base = Mgl.Base.Components.Portable_components.Component_base
+module Component_base = Mgl_base.Components.Portable_components.Component_base
 open Component_base
 
 type scene_common_data = unit
@@ -11,7 +11,7 @@ type component =
     string,
     component_msg,
     unit,
-    Mgl.Base.scene_msg )
+    Mgl_base.scene_msg )
   Component.abstract_component
 
 type data = { components : component list; last_panel_count : int }

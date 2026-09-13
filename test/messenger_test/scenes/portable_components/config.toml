@@ -1,6 +1,7 @@
 [scene]
 name = "PortableComponents"
 module = "Scenes.Portable_components.Model"
+msg = "Scenes.Portable_components.Scene_msg"
 
 [[components]]
 kind = "portable"
@@ -10,4 +11,4 @@ module = "Pcomp.Badge.Model"
 [[components]]
 kind = "user"
 name = "Panel"
-msg = "Scenes.Portable_components.Panel_msg.msg"
+msg = "Scenes.Portable_components.Panel_msg"

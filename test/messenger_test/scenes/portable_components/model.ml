@@ -1,6 +1,7 @@
 open Ml_regl_core
 open Messenger
-module Component_base = Mgl_base.Components.Portable_components.Component_base
+module Component_base = Mgl_base.Component_base
+module Panel_msg = Mgl_base.Msg.Scenes.Portable_components.Panel_msg
 open Component_base
 
 type scene_common_data = unit

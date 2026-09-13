@@ -180,8 +180,6 @@ let ocaml_float f =
   then s
   else s ^ "."
 
-let scene_constructor (scene : scene) = scene.namespace ^ "Msg"
-let component_constructor (c : component) = c.name ^ "Msg"
 let portable_component_module (c : component) = c.name ^ "_component"
 
 let require_component_module (c : component) =
@@ -193,6 +191,18 @@ let require_component_msg (c : component) =
   match c.msg with
   | Some msg -> msg
   | None -> die "component %s missing msg" c.name
+
+let constructor_of_module_path module_path =
+  String.concat "_" (String.split_on_char '.' module_path) ^ "_Msg"
+
+let component_message_module (c : component) =
+  match c.kind with
+  | "portable" -> require_component_module c
+  | "user" -> require_component_msg c
+  | other -> die "unsupported component kind %s" other
+
+let component_constructor c =
+  constructor_of_module_path (component_message_module c)
 
 let msg_module_parts msg =
   let parts = String.split_on_char '.' msg in
@@ -301,18 +311,15 @@ let rec add_msg_modules b indent tree =
       Buffer.add_string b (indent ^ "end\n"))
     tree.children
 
-let ensure_distinct_component_names components =
+let ensure_distinct_generated_names description names =
   let rec loop seen = function
     | [] -> ()
-    | (c : component) :: rest ->
-        if List.mem c.name seen then
-          die
-            "component name %s is defined more than once; names must be unique in \
-             Mgl_base.Component_base"
-            c.name;
-        loop (c.name :: seen) rest
+    | name :: rest ->
+        if List.mem name seen then
+          die "%s %s is generated more than once" description name;
+        loop (name :: seen) rest
   in
-  loop [] components
+  loop [] names
 
 let base_ml root (scenes : scene list) (groups : group list) =
   let b = Buffer.create 4096 in
@@ -324,9 +331,21 @@ let base_ml root (scenes : scene list) (groups : group list) =
   let all_components =
     List.concat_map (fun (_namespace, components) -> components) all_groups
   in
-  ensure_distinct_component_names all_components;
-  let message_paths =
+  ensure_distinct_generated_names "component message constructor"
+    (List.map component_constructor all_components);
+  let portable_components =
+    List.filter (fun (c : component) -> String.equal c.kind "portable")
+      all_components
+  in
+  ensure_distinct_generated_names "portable component helper module"
+    (List.map portable_component_module portable_components);
+  let scene_message_paths =
     List.filter_map (fun (scene : scene) -> scene.msg) scenes
+  in
+  ensure_distinct_generated_names "scene message constructor"
+    (List.map constructor_of_module_path scene_message_paths);
+  let message_paths =
+    scene_message_paths
     @ List.filter_map
         (fun (c : component) ->
           if String.equal c.kind "user" then Some (require_component_msg c)
@@ -349,14 +368,12 @@ let base_ml root (scenes : scene list) (groups : group list) =
   Buffer.add_string b "type scene_msg =\n";
   Buffer.add_string b "  | NullSceneMsg\n";
   List.iter
-    (fun (scene : scene) ->
-      match scene.msg with
-      | None -> ()
-      | Some msg ->
-          Buffer.add_string b
-            (Printf.sprintf "  | %s of %s\n" (scene_constructor scene)
-               (msg_type msg)))
-    scenes;
+    (fun msg ->
+      Buffer.add_string b
+        (Printf.sprintf "  | %s of %s\n"
+           (constructor_of_module_path msg)
+           (msg_type msg)))
+    scene_message_paths;
   if all_components <> [] then (
     Buffer.add_string b "\nmodule Component_base = struct\n";
     Buffer.add_string b "  type component_msg =\n";

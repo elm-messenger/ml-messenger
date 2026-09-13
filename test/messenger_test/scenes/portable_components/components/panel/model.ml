@@ -7,7 +7,7 @@ module Msg = Mgl_base.Msg.Scenes.Portable_components.Panel_msg
 type data = { count : int }
 
 let init _runtime _env = function
-  | PanelMsg Msg.Init -> ({ count = 0 }, ())
+  | Scenes_Portable_components_Panel_msg_Msg Msg.Init -> ({ count = 0 }, ())
   | _ -> ({ count = 0 }, ())
 
 let update _runtime env evnt data basedata =
@@ -18,27 +18,33 @@ let update _runtime env evnt data basedata =
         [
           General_model.Other
             ( "badge",
-              BadgeMsg
+              Pcomp_Badge_Model_Msg
                 (Pcomp.Badge.Model.SetText ("panel ping " ^ string_of_int count))
             );
-          General_model.Parent (OtherMsg (PanelMsg (Msg.PortableUpdated count)));
+          General_model.Parent
+            (OtherMsg
+               (Scenes_Portable_components_Panel_msg_Msg
+                  (Msg.PortableUpdated count)));
         ],
         (env, false) )
   | KeyDown "F" ->
       ( (data, basedata),
-        [ General_model.Other ("badge", BadgeMsg Pcomp.Badge.Model.Flash) ],
+        [
+          General_model.Other
+            ("badge", Pcomp_Badge_Model_Msg Pcomp.Badge.Model.Flash);
+        ],
         (env, false) )
   | _ -> ((data, basedata), [], (env, false))
 
 let updaterec _runtime env msg data basedata =
   match msg with
-  | PanelMsg Msg.PingPortable ->
+  | Scenes_Portable_components_Panel_msg_Msg Msg.PingPortable ->
       let count = data.count + 1 in
       ( ({ count }, basedata),
         [
           General_model.Other
             ( "badge",
-              BadgeMsg
+              Pcomp_Badge_Model_Msg
                 (Pcomp.Badge.Model.SetText ("scene ping " ^ string_of_int count))
             );
         ],

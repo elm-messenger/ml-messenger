@@ -29,3 +29,10 @@
  (libraries js_of_ocaml regl_js ml-messenger)
  (flags
   (:standard -warn-error -A)))
+
+(test
+ (name test_audio_update)
+ (modules test_audio_update)
+ (libraries js_of_ocaml regl_js ml_regl_core ml-messenger)
+ (flags
+  (:standard -warn-error -A)))

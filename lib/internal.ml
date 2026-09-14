@@ -6,6 +6,7 @@ type playing_audio = {
   channel : int;
   name : string;
   source : Regl_audio.source;
+  audio : Regl_audio.audio;
   opt : Audio_base.audio_option;
   start_time : float;
 }

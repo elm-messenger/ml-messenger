@@ -50,8 +50,13 @@ let play_audio (repo : Internal.audio_repo) channel name opt now =
   match Hashtbl.find_opt repo.audio name with
   | None -> ()
   | Some source ->
+      let audio =
+        match config_of_option opt with
+        | None -> Regl_audio.audio source now
+        | Some config -> Regl_audio.audio ~config source now
+      in
       repo.playing <-
-        { Internal.channel; name; source; opt; start_time = now }
+        { Internal.channel; name; source; audio; opt; start_time = now }
         :: repo.playing
 
 let stop_audio (repo : Internal.audio_repo) now target =
@@ -66,17 +71,22 @@ let stop_audio (repo : Internal.audio_repo) now target =
           | Audio_name (c, name) -> pa.channel = c && pa.name = name))
       repo.playing
 
-let update_audio (_repo : Internal.audio_repo)
-    (_target : Audio_base.audio_target)
-    (_f : Regl_audio.audio -> Regl_audio.audio) =
-  ()
+let update_audio (repo : Internal.audio_repo) target f =
+  repo.playing <-
+    List.map
+      (fun (pa : Internal.playing_audio) ->
+        let matches =
+          match target with
+          | Audio_base.All_audio -> true
+          | Audio_channel c -> pa.channel = c
+          | Audio_name (c, name) -> pa.channel = c && pa.name = name
+        in
+        if matches then { pa with audio = f pa.audio } else pa)
+      repo.playing
 
 let audio_tree (runtime : Internal.runtime) =
   remove_finished_audio runtime.audio_repo runtime.current_timestamp;
   runtime.audio_repo.playing
-  |> List.map (fun (pa : Internal.playing_audio) ->
-      match config_of_option pa.opt with
-      | None -> Regl_audio.audio pa.source pa.start_time
-      | Some config -> Regl_audio.audio ~config pa.source pa.start_time)
+  |> List.map (fun (pa : Internal.playing_audio) -> pa.audio)
   |> Regl_audio.group
   |> Regl_audio.scale_volume runtime.volume

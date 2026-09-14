@@ -23,8 +23,7 @@ let init runtime env _msg =
     components =
       [
         Components.Panel.Model.component
-          (Scenes_Portable_components_Panel_msg_Msg Panel_msg.Init)
-          runtime env;
+          (Scenes_Portable_components_Panel_msg_Msg Panel_msg.Init) runtime env;
         Badge_component.component ~matcher:(String.equal "badge")
           ~map_target:Fun.id (Pcomp.Badge.Model.Init "portable badge") runtime
           env;
@@ -36,7 +35,7 @@ let handle_component_msg data env = function
   | General_model.SOMMsg som -> (data, [ som ], env)
   | OtherMsg
       (Scenes_Portable_components_Panel_msg_Msg
-        (Panel_msg.PortableUpdated count)) ->
+         (Panel_msg.PortableUpdated count)) ->
       ({ data with last_panel_count = count }, [], env)
   | _ -> (data, [], env)
 
@@ -57,8 +56,7 @@ let update runtime env evnt data =
         Component.update_components_with_target runtime env
           [
             ( "panel",
-              Scenes_Portable_components_Panel_msg_Msg
-                Panel_msg.PingPortable );
+              Scenes_Portable_components_Panel_msg_Msg Panel_msg.PingPortable );
           ]
           data.components
       in

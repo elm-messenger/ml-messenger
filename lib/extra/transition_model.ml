@@ -54,7 +54,7 @@ let suppress_scene_change_soms data msgs =
         | _ -> true)
       msgs
 
-let update_m_transition _runtime env (mt : mix_transition) data bdata dt =
+let update_m_transition _runtime env (mt : mix_transition) data _bdata dt =
   let current = mt.current_transition +. dt in
   let ratio = if mt.t <= 0. then 1. else clamp01 (current /. mt.t) in
   let was_before_change = data.phase = BeforeChange in
@@ -65,7 +65,6 @@ let update_m_transition _runtime env (mt : mix_transition) data bdata dt =
   in
   let bdata =
     {
-      bdata with
       Scene.post_processor = (fun new_view -> mt.trans old_view new_view ratio);
       dead = current >= mt.t;
     }
@@ -114,7 +113,6 @@ let update_nm_transition _runtime env (nt : no_mix_transition) data bdata dt =
       let ratio = if nt.in_t <= 0. then 1. else clamp01 (current /. nt.in_t) in
       let bdata =
         {
-          bdata with
           Scene.post_processor = (fun view -> nt.in_trans view ratio);
           dead = current >= nt.in_t;
         }
@@ -123,7 +121,7 @@ let update_nm_transition _runtime env (nt : no_mix_transition) data bdata dt =
       let phase = if current >= nt.in_t then Finished else AfterChange in
       (({ data with transition; phase }, bdata), [], (env, false))
   | Finished ->
-      ( (data, { bdata with Scene.dead = true; post_processor = empty_pp }),
+      ( (data, { Scene.dead = true; post_processor = empty_pp }),
         [],
         (env, false) )
 

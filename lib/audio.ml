@@ -12,23 +12,25 @@ let audio_duration (runtime : Internal.runtime) name =
 
 let config_of_option = function
   | Audio_base.A_once common ->
-      let c = Regl_audio.default_config in
       let common =
         Option.value common ~default:Audio_base.default_common_option
       in
       Some
         {
-          c with
-          playback_rate = common.rate;
+          Regl_audio.playback_rate = common.rate;
           start_at = common.start;
           loop = None;
         }
   | A_loop (common, loop) ->
-      let c = Regl_audio.default_config in
       let common =
         Option.value common ~default:Audio_base.default_common_option
       in
-      Some { c with playback_rate = common.rate; start_at = common.start; loop }
+      Some
+        {
+          Regl_audio.playback_rate = common.rate;
+          start_at = common.start;
+          loop;
+        }
 
 let is_loop = function Audio_base.A_loop _ -> true | A_once _ -> false
 

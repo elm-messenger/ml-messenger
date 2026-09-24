@@ -49,10 +49,14 @@ JS or desktop branches to the portable framework just to work around a host.
 - `test/messenger_test/`: full example application and primary integration
   fixture for scenes, components, resources, audio, camera, and transitions.
 - `docs/main.typ` and `docs/architecture.png`: architecture documentation.
+- `docs/known_issues.md`: open problems and intended-but-surprising behavior;
+  update it when fixing or finding one.
 
 The `messenger` library is published as `ml-messenger` and is available to
 consumers as the wrapped `Messenger` module. `lib/extra` is the separate
-wrapped `Messenger_extra` library. There are intentionally few `.mli` files,
+wrapped `Messenger_extra` library, published as `ml-messenger.extra`;
+applications using portable components, transitions, or other helpers must
+list it in their Dune `libraries`. There are intentionally few `.mli` files,
 so a new top-level binding can become public API; avoid accidental API growth.
 
 ## Core invariants
@@ -93,7 +97,8 @@ The example app uses `(include_subdirs qualified)` and generates
 - Never hand-edit `mgl_base.ml` or `mgl_all.ml`; they begin with an
   `@generated` marker and live under `_build`.
 - Put project-wide defaults, resources, initial scene, and global components
-  in `project.toml`.
+  in `project.toml`. `[main] user_data_type` names the user data type
+  (default `Lib.User_data.user_data`).
 - Put scene registration and component declarations in the nearest
   `config.toml`. Scene and message module paths are qualified OCaml paths.
 - A `portable` component requires `module`; a `user` component requires `msg`.

@@ -6,14 +6,16 @@ description:
 maintainer: ["Yiming Xiang <yiming@cs.utexas.edu>"]
 authors: ["Yiming Xiang <yiming@cs.utexas.edu>"]
 license: "LICENSE"
-tags: ["add topics" "to describe" "your" "project"]
 homepage: "https://github.com/elm-messenger/ml-messenger"
-doc: "https://url/to/documentation"
 bug-reports: "https://github.com/elm-messenger/ml-messenger/issues"
 depends: [
   "dune" {>= "3.19"}
   "ocaml"
+  "ml_regl_core"
+  "regl_backend"
   "otoml"
+  "js_of_ocaml" {with-test}
+  "regl_js" {with-test}
   "odoc" {with-doc}
 ]
 build: [

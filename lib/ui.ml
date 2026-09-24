@@ -80,6 +80,9 @@ let init input () =
   runtime.volume <- input.config.default_global_data.volume;
   runtime.tot_res_num <- Resources.resource_num input.resources;
   runtime.current_scene <- input.config.init_scene;
+  runtime.virtual_size <-
+    (input.config.virtual_size.width, input.config.virtual_size.height);
+  runtime.max_assets_per_frame <- input.config.max_assets_per_frame;
   let model = make_initial_model input runtime in
   let start_config : Regl_proto.regl_start_config =
     {
@@ -212,6 +215,7 @@ let rec handle_som input som model =
   | SOMChangeFPS fps ->
       (model, [ Regl_proto.config_regl (ConfigTimeInterval fps) ])
   | SOMChangeMaxAssetsPerFrame max_items ->
+      r.max_assets_per_frame <- max_items;
       (model, [ Regl_proto.config_regl (ConfigMaxAssetsPerFrame max_items) ])
   | SOMLoadResource (key, res) ->
       r.tot_res_num <- r.tot_res_num + 1;
@@ -249,8 +253,14 @@ let game_update input evnt model =
       in
       (psom, { model1 with env = Base.add_common_data scene env })
   in
-  let model3 = model2 in
-  handle_soms input (gcsom @ scenesom) model3
+  let model3, outputs = handle_soms input (gcsom @ scenesom) model2 in
+  (* Drop components that died during this update so they are not drawn. *)
+  ( {
+      model3 with
+      global_components =
+        Global_component.filter_alive_gc model3.global_components;
+    },
+    outputs )
 
 let update_input_state (r : Internal.runtime) = function
   | Regl_proto.UpdateTick ts -> r.current_timestamp <- ts

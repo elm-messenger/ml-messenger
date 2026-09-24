@@ -43,16 +43,13 @@ let init (opt : ('scenemsg, 'userdata) init_option) runtime env _msg =
     },
     { Scene.dead = false; post_processor = empty_pp } )
 
-let suppress_scene_change_soms data msgs =
-  if not data.filter_som then msgs
-  else
-    List.filter
-      (function
-        | General_model.Parent (SOMMsg (Scene.SOMChangeScene _ | SOMLoadGC _))
-          ->
-            false
-        | _ -> true)
-      msgs
+(* Output remapper for the scene being transitioned away from: it must not start
+   another scene change or transition while this one is running. *)
+let suppress_scene_change_soms (soms, env) =
+  ( List.filter
+      (function Scene.SOMChangeScene _ | SOMLoadGC _ -> false | _ -> true)
+      soms,
+    env )
 
 let update_m_transition _runtime env (mt : mix_transition) data _bdata dt =
   let current = mt.current_transition +. dt in
@@ -126,6 +123,17 @@ let update_nm_transition _runtime env (nt : no_mix_transition) data bdata dt =
         (env, false) )
 
 let update runtime env evnt data bdata =
+  (* [env.common_data] is the active scene; the wrapped scene is threaded back
+     to [Ui] through the returned env and stays active until the change. *)
+  let env, data =
+    if data.filter_som then
+      ( Base.add_common_data
+          (Scene.update_result_remap suppress_scene_change_soms
+             env.Base.common_data)
+          env,
+        { data with filter_som = false } )
+    else (env, data)
+  in
   let data =
     match data.old_vsr with
     | None -> data

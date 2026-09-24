@@ -33,6 +33,8 @@ type runtime = {
   mutable mouse_pos : float * float;
   mutable volume : float;
   mutable current_scene : string;
+  mutable virtual_size : float * float;
+  mutable max_assets_per_frame : int;
 }
 
 let empty_audio_repo () = { audio = Hashtbl.create 16; playing = [] }
@@ -55,4 +57,6 @@ let empty_runtime () =
     mouse_pos = (0., 0.);
     volume = 1.;
     current_scene = "";
+    virtual_size = (0., 0.);
+    max_assets_per_frame = 0;
   }

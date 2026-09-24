@@ -2,10 +2,21 @@ open Ml_regl_core
 open Messenger
 
 type init_option = unit
-type data = { elapsed : float; prev_ts : float option; configured : bool }
 
-let init () _runtime _env _msg =
-  ( { elapsed = 0.; prev_ts = None; configured = false },
+type data = {
+  elapsed : float;
+  prev_ts : float option;
+  configured : bool;
+  restore_max_assets : int;
+}
+
+let init () runtime _env _msg =
+  ( {
+      elapsed = 0.;
+      prev_ts = None;
+      configured = false;
+      restore_max_assets = Base.get_max_assets_per_frame runtime;
+    },
     { Scene.dead = false; post_processor = Fun.id } )
 
 let update runtime env evnt data bdata =
@@ -26,17 +37,18 @@ let update runtime env evnt data bdata =
      else [])
     @
     if done_loading then
-      [ General_model.Parent (SOMMsg (Scene.SOMChangeMaxAssetsPerFrame 4)) ]
+      [
+        General_model.Parent
+          (SOMMsg (Scene.SOMChangeMaxAssetsPerFrame data.restore_max_assets));
+      ]
     else []
   in
   ((data, { bdata with Scene.dead = done_loading }), msgs, (env, false))
 
 let updaterec _runtime env _msg data bdata = ((data, bdata), [], env)
 
-let view _runtime env data _bdata =
-  let virtual_height =
-    env.Base.global_data.camera.Ml_regl_core.Regl_common.y *. 2.
-  in
+let view runtime _env data _bdata =
+  let _, virtual_height = Base.get_virtual_size runtime in
   let spinner =
     List.init 8 (fun i ->
         let fi = float_of_int i in

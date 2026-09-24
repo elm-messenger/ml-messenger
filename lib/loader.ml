@@ -13,4 +13,15 @@ let load_scene_by_name name scenes smsg model =
       let new_model = load_scene scenest smsg model in
       new_model.runtime.current_scene <- name;
       new_model
-  | None -> model
+  | None ->
+      let registered =
+        Hashtbl.to_seq_keys scenes |> List.of_seq
+        |> List.sort_uniq String.compare
+      in
+      Printf.eprintf
+        "ml-messenger: cannot load unknown scene %S; keeping the current scene \
+         (registered scenes: %s)\n\
+         %!"
+        name
+        (String.concat ", " registered);
+      model

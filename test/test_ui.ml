@@ -1,0 +1,181 @@
+(* Drives [Ui.init] and [Ui.update] directly. This links the desktop backend but
+   never calls [Ui.gen_main], so no window opens. *)
+
+open Ml_regl_core
+open Messenger
+module T = Messenger_extra.Transition_model
+module TB = Messenger_extra.Transition_base
+
+(* How many times scene "A" was updated, to spot duplicate updates. *)
+let a_updates = ref 0
+
+(* A global component that records the messages it is called with. *)
+let probe : (int, unit) Scene.concrete_global_component =
+  {
+    init = (fun _ _ _ -> (0, { Scene.dead = false; post_processor = Fun.id }));
+    update = (fun _ env _ n bdata -> ((n, bdata), [], (env, false)));
+    updaterec =
+      (fun _ env msg n bdata ->
+        ( (n + 1, bdata),
+          [
+            General_model.Parent
+              (SOMMsg
+                 (Scene.SOMSaveValue ("probe", msg ^ string_of_int (n + 1))));
+          ],
+          env ));
+    view = (fun _ _ _ _ -> Regl_builtin_programs.empty);
+    id = "probe";
+  }
+
+let scene name msg runtime env =
+  let con : (_, _, _, _, _, _, _) Scene.concrete_scene =
+    {
+      init = (fun _ _ _ -> ());
+      update =
+        (fun _ env evnt () ->
+          if String.equal name "A" then incr a_updates;
+          let soms =
+            match evnt with
+            | Regl_proto.KeyDown "T" ->
+                [
+                  T.gen_sequential_transition_som
+                    (TB.null_transition, 1000.)
+                    (TB.null_transition, 1000.)
+                    (By_name "B");
+                ]
+            | KeyDown "C" -> [ Scene.SOMChangeScene (By_name "C") ]
+            | KeyDown "L" ->
+                [
+                  Scene.SOMLoadGC
+                    (Global_component.gen_global_component probe "" None);
+                ]
+            | KeyDown "P" ->
+                [ Scene.SOMCallGC ("probe", "ping"); SOMCallGC ("nobody", "x") ]
+            | KeyDown "U" -> [ Scene.SOMUnloadGC "probe" ]
+            | _ -> []
+          in
+          ((), soms, env));
+      view = (fun _ _ () -> Regl_builtin_programs.empty);
+    }
+  in
+  Scene.abstract con msg runtime env
+
+let input : unit Ui.input =
+  {
+    config =
+      {
+        init_scene = By_name "A";
+        virtual_size = { Ui.width = 800.; height = 600. };
+        fbo_num = 5;
+        max_assets_per_frame = 4;
+        enabled_program = Ui.AllBuiltinProgram;
+        time_interval = Regl_proto.AnimationFrame;
+        default_global_data =
+          { Base.user_data = (); camera = Camera.origin; volume = 1. };
+        app_name = None;
+      };
+    resources =
+      [
+        ("a", Resources.Audio_res "x.ogg");
+        ("b", Audio_res "x.ogg");
+        ("d1", Data_res "f.json");
+        ("d2", Data_res "f.json");
+        ("e", Data_res "g.json");
+      ];
+    scenes =
+      Scene.table
+        [
+          Scene.named "A" (scene "A");
+          Scene.named "B" (scene "B");
+          Scene.named "C" (scene "C");
+        ];
+    global_components = [];
+  }
+
+let count cmd outputs = List.length (List.filter (( = ) cmd) outputs)
+let step m input_msg = Ui.update input m input_msg
+
+let event m evnt =
+  let m, _, _ = step m (Regl_proto.Event evnt) in
+  m
+
+let recv m msg =
+  let m, _, _ = step m (Regl_proto.REGLRecvMsg msg) in
+  m
+
+let progress m = Base.get_loading_progress m.Model.runtime
+let scene_name m = Base.get_current_scene m.Model.runtime
+let gcs m = List.length m.Model.global_components
+
+(* Keys sharing an audio URL or a data path: one request, every key registered,
+   a duplicate reply ignored, a failed path loadable again. *)
+let () =
+  let m, outputs = Ui.init input () in
+  assert (count (Regl_proto.load_audio "x.ogg") outputs = 1);
+  assert (count (Regl_proto.load_file "f.json") outputs = 1);
+  assert (count (Regl_proto.load_file "g.json") outputs = 1);
+  let m, outputs =
+    Ui.handle_som input (SOMLoadResource ("d3", Data_res "f.json")) m
+  in
+  assert (outputs = []);
+  let audio = { Regl_audio.buffer_id = 0; duration = 1. } in
+  let m, _, _ =
+    step m
+      (Regl_proto.AudioMsg
+         (AudioLoadSuccess { audio_url = "x.ogg"; source = audio }))
+  in
+  assert (Hashtbl.mem m.runtime.audio_repo.audio "a");
+  assert (Hashtbl.mem m.runtime.audio_repo.audio "b");
+  assert (progress m = (2, 6));
+  let m = recv m (REGLFileLoaded { path = "f.json"; data = "F" }) in
+  assert (
+    List.for_all
+      (fun key -> Base.get_config_data key m.runtime = Some "F")
+      [ "d1"; "d2"; "d3" ]);
+  assert (progress m = (5, 6));
+  let m = recv m (REGLFileLoaded { path = "f.json"; data = "again" }) in
+  assert (progress m = (5, 6));
+  assert (Base.get_config_data "f.json" m.runtime = None);
+  let m = recv m (REGLFileLoadFailed { path = "g.json"; reason = "404" }) in
+  assert (progress m = (5, 6));
+  let _, outputs =
+    Ui.handle_som input (SOMLoadResource ("e", Data_res "g.json")) m
+  in
+  assert (count (Regl_proto.load_file "g.json") outputs = 1)
+
+(* The current scene is recorded only once a scene is actually loaded. *)
+let () =
+  prerr_endline "test_ui: the next error is expected";
+  let config = { input.config with init_scene = By_name "Nope" } in
+  let m, _ = Ui.init { input with config } () in
+  assert (scene_name m = "")
+
+(* Transitions and global components through [Ui]. *)
+let () =
+  let m, _ = Ui.init input () in
+  assert (scene_name m = "A");
+  let m = event m (KeyDown "T") in
+  assert (gcs m = 1);
+  (* A sequential transition does not keep (and update) a copy of the old scene,
+     so the old scene is updated once per event. *)
+  let before = !a_updates in
+  let m = event m (KeyDown "x") in
+  assert (!a_updates - before = 1);
+  (* [filter_som]: the old scene cannot start another scene change. *)
+  let m = event m (KeyDown "C") in
+  assert (scene_name m = "A");
+  let m = event m (UpdateTick 0.) in
+  let m = event m (UpdateTick 1500.) in
+  assert (scene_name m = "B");
+  let m = event m (UpdateTick 3000.) in
+  assert (gcs m = 0);
+  let m = event m (KeyDown "C") in
+  assert (scene_name m = "C");
+  let m = event m (KeyDown "L") in
+  assert (gcs m = 1);
+  let m = event m (KeyDown "P") in
+  assert (Base.get_local_value "probe" m.runtime = Some "ping1");
+  let m = event m (KeyDown "P") in
+  assert (Base.get_local_value "probe" m.runtime = Some "ping2");
+  let m = event m (KeyDown "U") in
+  assert (gcs m = 0)

@@ -23,13 +23,17 @@ let clamp01 x = max 0. (min 1. x)
 let empty_pp r = r
 
 let init (opt : init_option) runtime env _msg =
+  (* Only a mixed transition draws the old scene, so only it keeps one. *)
   let old_vsr =
-    Some
-      {
-        Vsr.env = Base.remove_common_data env;
-        runtime;
-        scene = env.common_data;
-      }
+    match opt.transition with
+    | MTransition _ ->
+        Some
+          {
+            Vsr.env = Base.remove_common_data env;
+            runtime;
+            scene = env.common_data;
+          }
+    | NMTransition _ -> None
   in
   ( {
       transition = opt.transition;

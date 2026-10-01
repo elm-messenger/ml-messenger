@@ -57,3 +57,12 @@
  (libraries js_of_ocaml regl_js ml_regl_core ml-messenger)
  (flags
   (:standard -warn-error -A)))
+
+; Drives Ui directly; links the desktop backend but never opens a window.
+
+(test
+ (name test_ui)
+ (modules test_ui)
+ (libraries regl_desktop ml_regl_core ml-messenger messenger_extra)
+ (flags
+  (:standard -warn-error -A)))

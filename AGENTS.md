@@ -46,6 +46,9 @@ JS or desktop branches to the portable framework just to work around a host.
   for routing and the component API, run by `dune runtest`.
 - `test/test_example.ml`: headless test that drives `messenger_test` scenes
   without `Ui` and checks the text they draw.
+- `test/test_ui.ml`: drives `Ui.init`/`Ui.update` (resource loading,
+  transitions, global components). It links the desktop backend but never
+  calls `Ui.gen_main`, so it opens no window.
 - `test/test.ml`: minimal cross-backend compilation/smoke application.
 - `test/messenger_test/`: full example application and primary integration
   fixture for scenes, components, resources, audio, camera, and transitions.

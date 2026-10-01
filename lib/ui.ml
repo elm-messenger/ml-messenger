@@ -35,25 +35,36 @@ let builtin_programs = function
       Some [ "textbox"; "triangle"; "circle"; "quad"; "poly" ]
   | AllBuiltinProgram -> None
 
-let add_pending_data (runtime : Internal.runtime) path key =
-  let old =
-    Option.value
-      (Hashtbl.find_opt runtime.Internal.pending_data_paths path)
-      ~default:[]
-  in
-  Hashtbl.replace runtime.pending_data_paths path (key :: old)
+(* Record that [key] waits for [source]; true if no request for it is in flight
+   yet, so one must be sent. *)
+let add_waiting waiting source key =
+  match Hashtbl.find_opt waiting source with
+  | Some keys ->
+      Hashtbl.replace waiting source (keys @ [ key ]);
+      false
+  | None ->
+      Hashtbl.replace waiting source [ key ];
+      true
+
+(* The keys that waited for [source]; empty for a reply nobody asked for. *)
+let take_waiting waiting source =
+  let keys = Option.value (Hashtbl.find_opt waiting source) ~default:[] in
+  Hashtbl.remove waiting source;
+  keys
 
 let load_resource_command (runtime : Internal.runtime) key = function
   | Resources.Texture_res (url, opts) ->
       Some (Regl_proto.load_texture key url opts)
   | Audio_res url ->
-      Hashtbl.replace runtime.pending_audio_urls url key;
-      Some (Regl_proto.load_audio url)
+      if add_waiting runtime.pending_audio_urls url key then
+        Some (Regl_proto.load_audio url)
+      else None
   | Font_res (image, json) -> Some (Regl_proto.load_font key image json)
   | Program_res program -> Some (Regl_proto.create_regl_program key program)
   | Data_res path ->
-      add_pending_data runtime path key;
-      Some (Regl_proto.load_file path)
+      if add_waiting runtime.pending_data_paths path key then
+        Some (Regl_proto.load_file path)
+      else None
 
 let make_initial_model input runtime =
   let global_data = Base.global_data_of_init input.config.default_global_data in
@@ -75,7 +86,6 @@ let init input () =
   let runtime = Internal.empty_runtime () in
   runtime.volume <- input.config.default_global_data.volume;
   runtime.tot_res_num <- Resources.resource_num input.resources;
-  runtime.current_scene <- Scene.target_name input.config.init_scene;
   runtime.virtual_size <-
     (input.config.virtual_size.width, input.config.virtual_size.height);
   runtime.max_assets_per_frame <- input.config.max_assets_per_frame;
@@ -137,18 +147,15 @@ let handle_regl_recv input model msg =
       r.loaded_res_num <- r.loaded_res_num + 1
   | REGLProgramCreateFail _ -> ()
   | REGLFileLoaded { path; data } ->
-      let keys =
-        Option.value
-          (Hashtbl.find_opt r.pending_data_paths path)
-          ~default:[ path ]
-      in
       List.iter
         (fun key ->
           Hashtbl.replace r.config_data key data;
           r.loaded_res_num <- r.loaded_res_num + 1)
-        keys;
-      Hashtbl.remove r.pending_data_paths path
-  | REGLFileLoadFailed _ -> ()
+        (take_waiting r.pending_data_paths path)
+  | REGLFileLoadFailed { path; _ } ->
+      (* Not counted as progress; forgetting the keys lets a later load of the
+         same path send a new request. *)
+      ignore (take_waiting r.pending_data_paths path)
   | REGLValueRead { key; value } -> Hashtbl.replace r.local_values key value
   | REGLValueReadMissing key -> Hashtbl.remove r.local_values key);
   ignore input;
@@ -158,14 +165,13 @@ let handle_audio_msg input model msg =
   let r = model.Model.runtime in
   (match msg with
   | Regl_proto.AudioLoadSuccess { audio_url; source } ->
-      let key =
-        Option.value
-          (Hashtbl.find_opt r.pending_audio_urls audio_url)
-          ~default:audio_url
-      in
-      Hashtbl.replace r.audio_repo.audio key source;
-      r.loaded_res_num <- r.loaded_res_num + 1
-  | AudioLoadFailed _ -> ()
+      List.iter
+        (fun key ->
+          Hashtbl.replace r.audio_repo.audio key source;
+          r.loaded_res_num <- r.loaded_res_num + 1)
+        (take_waiting r.pending_audio_urls audio_url)
+  | AudioLoadFailed { audio_url; _ } ->
+      ignore (take_waiting r.pending_audio_urls audio_url)
   | AudioContextReady _ -> ());
   ignore input;
   (model, [])

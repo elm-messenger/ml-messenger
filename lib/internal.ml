@@ -26,7 +26,10 @@ type runtime = {
   config_data : (string, string) Hashtbl.t;
   local_values : (string, string) Hashtbl.t;
   pending_data_paths : (string, string list) Hashtbl.t;
-  pending_audio_urls : (string, string) Hashtbl.t;
+  pending_audio_urls : (string, string list) Hashtbl.t;
+      (** Resource keys waiting for a file or audio URL. The load protocol names
+          neither by key, so one request is sent per path or URL and its reply
+          registers every waiting key. *)
   mutable current_timestamp : float;
   mutable pressed_mouse_buttons : IntSet.t;
   mutable pressed_keys : StringSet.t;

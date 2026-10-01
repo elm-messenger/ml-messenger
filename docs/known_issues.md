@@ -15,8 +15,3 @@ of writing.
   dispatches events from the end of the component list to the front, while
   `Component.view_components` draws by z-index. List order decides who gets
   input first; z-index only decides drawing.
-
-## Runtime
-
-- **Global component messaging is stringly typed.** `Scene.gc_msg` and
-  `Scene.gc_target` are both `string` (`lib/scene.ml:107-108`).

@@ -22,7 +22,12 @@ type 'userdata data = {
 let clamp01 x = max 0. (min 1. x)
 let empty_pp r = r
 
-let init (opt : init_option) runtime env _msg =
+(* This global component takes no messages. *)
+type msg = |
+
+let key : msg Global_component.key = Global_component.key "transition"
+
+let init (opt : init_option) runtime env =
   (* Only a mixed transition draws the old scene, so only it keeps one. *)
   let old_vsr =
     match opt.transition with
@@ -71,9 +76,7 @@ let update_m_transition _runtime env (mt : mix_transition) data _bdata dt =
   let transition = MTransition { mt with current_transition = current } in
   let data = { data with transition; phase = AfterChange } in
   let msgs =
-    if was_before_change then
-      [ General_model.Parent (SOMMsg (Scene.SOMChangeScene data.target)) ]
-    else []
+    if was_before_change then [ Scene.SOMChangeScene data.target ] else []
   in
   ((data, bdata), msgs, (env, false))
 
@@ -93,9 +96,7 @@ let update_nm_transition _runtime env (nt : no_mix_transition) data bdata dt =
       if current >= nt.out_t then
         let transition = NMTransition { nt with current_transition = 0. } in
         let data = { data with transition; phase = AfterChange } in
-        ( (data, bdata),
-          [ General_model.Parent (SOMMsg (Scene.SOMChangeScene data.target)) ],
-          (env, false) )
+        ((data, bdata), [ Scene.SOMChangeScene data.target ], (env, false))
       else
         let transition =
           NMTransition { nt with current_transition = current }
@@ -145,17 +146,16 @@ let update runtime env evnt data bdata =
       | NMTransition nt -> update_nm_transition runtime env nt data bdata dt)
   | _ -> ((data, bdata), [], (env, false))
 
-let updaterec _runtime env _msg data bdata = ((data, bdata), [], env)
+let updaterec _runtime _env (msg : msg) _data _bdata = match msg with _ -> .
 let view _runtime _env _data _bdata = Regl_builtin_programs.empty
 
-let gc_con opt () : (_, _) Scene.concrete_global_component =
-  { init = init opt; update; updaterec; view; id = "transition" }
+let gc_con opt () : (_, _, _) Scene.concrete_global_component =
+  { init = init opt; update; updaterec; view; key }
 
-let gen_gc opt target =
-  Global_component.gen_global_component (gc_con opt ()) "" target
+let gen_gc ?key opt = Global_component.make ?key (gc_con opt ())
 
 let gen_transition_som transition scene =
-  Scene.SOMLoadGC (gen_gc { transition; scene; filter_som = true } None)
+  Scene.SOMLoadGC (gen_gc { transition; scene; filter_som = true })
 
 let gen_sequential_transition_som out_t in_t scene =
   gen_transition_som (gen_no_mix_transition out_t in_t) scene

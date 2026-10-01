@@ -197,17 +197,17 @@ let rec handle_som input som model =
           global_components = model.global_components @ [ gc r model.env ];
         },
         [] )
-  | SOMUnloadGC target ->
+  | SOMUnloadGC key ->
       ( {
           model with
           global_components =
-            Recursion.remove_objects target model.global_components;
+            Recursion.remove_objects key.gc_name model.global_components;
         },
         [] )
-  | SOMCallGC (tar, msg) ->
-      let call = (tar, msg) in
+  | SOMCallGC (key, msg) ->
       let gc1, som1, env1 =
-        Recursion.update_objects_with_target r model.env [ call ]
+        Recursion.update_objects_with_target r model.env
+          [ (key.gc_name, Scene.Gc_call (key, msg)) ]
           model.global_components
       in
       let model1 = { model with global_components = gc1; env = env1 } in

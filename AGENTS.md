@@ -130,6 +130,12 @@ Applications are plain OCaml; there is no code generation.
   `None` or `Some params`. Put a key that other scenes use in a plain module
   next to the scene directories so scenes can refer to each other's keys
   without a cycle.
+- A global component defines its own `msg` type and a key
+  (`let key : msg Global_component.key = Global_component.key "fps"`), and is
+  instantiated with `Global_component.make ?key`. It is called with
+  `SOMCallGC (key, msg)` and unloaded with `SOMUnloadGC key`; a call whose key
+  has the instance's name but another identity is reported and ignored. Its
+  `update`/`updaterec` return scene output messages directly.
 - A storage read (`SOMReadValue key`) is answered by a
   `Regl_proto.ValueRead { key; value }` event (`value = None` when nothing is
   stored), delivered to global components, the active scene, and its

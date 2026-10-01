@@ -13,6 +13,12 @@ type target = By_name of string | By_key : 'param key * 'param -> target
 
 let target_name = function By_name name -> name | By_key (key, _) -> key.name
 
+type 'msg gc_key = { gc_name : string; gc_id : 'msg Type.Id.t }
+(** Names a global component instance and the type of the messages it accepts.
+*)
+
+let gc_key name = { gc_name = name; gc_id = Type.Id.make () }
+
 type ('data, 'envro, 'env, 'event, 'ren, 'param, 'userdata) concrete_scene = {
   init : 'envro -> 'env -> 'param option -> 'data;
   update :
@@ -46,8 +52,8 @@ and 'userdata scene_output_msg =
       Audio_base.audio_target * (Regl_audio.audio -> Regl_audio.audio)
   | SOMSetVolume of float
   | SOMLoadGC of 'userdata global_component_storage
-  | SOMUnloadGC of gc_target
-  | SOMCallGC of gc_target * gc_msg
+  | SOMUnloadGC : 'msg gc_key -> 'userdata scene_output_msg
+  | SOMCallGC : 'msg gc_key * 'msg -> 'userdata scene_output_msg
   | SOMChangeFPS of Regl_proto.time_interval
   | SOMChangeMaxAssetsPerFrame of int
   | SOMLoadResource of string * Resources.resource_def
@@ -59,24 +65,6 @@ and ('userdata, 'param) scene_storage =
   Internal.runtime ->
   (unit, 'userdata) Base.env ->
   'userdata m_abstract_scene
-
-and ('tar, 'msg, 'userdata) m_msg =
-  ('tar, 'msg, 'userdata scene_output_msg) General_model.msg
-
-and ('msg, 'userdata) m_msg_base =
-  ('msg, 'userdata scene_output_msg) General_model.msg_base
-
-and ('data, 'common, 'userdata, 'tar, 'msg, 'bdata) m_concrete_general_model =
-  ( 'data,
-    Internal.runtime,
-    ('common, 'userdata) Base.env,
-    Regl_proto.regl_event,
-    'tar,
-    'msg,
-    Regl_common.renderable,
-    'bdata,
-    'userdata scene_output_msg )
-  General_model.concrete_general_model
 
 and ('common, 'userdata, 'tar, 'msg, 'bdata) m_abstract_general_model =
   ( Internal.runtime,
@@ -97,21 +85,19 @@ and 'userdata m_abstract_scene =
     'userdata )
   abstract_scene
 
-and gc_common_data = unit
-
 and gc_base_data = {
   dead : bool;
   post_processor : Regl_common.renderable -> Regl_common.renderable;
 }
 
-and gc_msg = string
-and gc_target = string
+(* A message for a global component, packed with the key it was sent to. *)
+and gc_call = Gc_call : 'msg gc_key * 'msg -> gc_call
 
 and 'userdata abstract_global_component =
   ( 'userdata m_abstract_scene,
     'userdata,
-    gc_target,
-    gc_msg,
+    string,
+    gc_call,
     gc_base_data )
   m_abstract_general_model
 
@@ -120,11 +106,10 @@ and 'userdata global_component_storage =
   ('userdata m_abstract_scene, 'userdata) Base.env ->
   'userdata abstract_global_component
 
-and ('data, 'userdata) concrete_global_component = {
+and ('data, 'msg, 'userdata) concrete_global_component = {
   init :
     Internal.runtime ->
     ('userdata m_abstract_scene, 'userdata) Base.env ->
-    gc_msg ->
     'data * gc_base_data;
   update :
     Internal.runtime ->
@@ -133,16 +118,16 @@ and ('data, 'userdata) concrete_global_component = {
     'data ->
     gc_base_data ->
     ('data * gc_base_data)
-    * (gc_target, gc_msg, 'userdata) m_msg list
+    * 'userdata scene_output_msg list
     * (('userdata m_abstract_scene, 'userdata) Base.env * bool);
   updaterec :
     Internal.runtime ->
     ('userdata m_abstract_scene, 'userdata) Base.env ->
-    gc_msg ->
+    'msg ->
     'data ->
     gc_base_data ->
     ('data * gc_base_data)
-    * (gc_target, gc_msg, 'userdata) m_msg list
+    * 'userdata scene_output_msg list
     * ('userdata m_abstract_scene, 'userdata) Base.env;
   view :
     Internal.runtime ->
@@ -150,7 +135,7 @@ and ('data, 'userdata) concrete_global_component = {
     'data ->
     gc_base_data ->
     Regl_common.renderable;
-  id : gc_target;
+  key : 'msg gc_key;  (** The default key of its instances. *)
 }
 
 (** A registered scene: its key and how to start it. *)

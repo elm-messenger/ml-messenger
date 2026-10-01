@@ -10,21 +10,25 @@ module TB = Messenger_extra.Transition_base
 let a_updates = ref 0
 
 (* A global component that records the messages it is called with. *)
-let probe : (int, unit) Scene.concrete_global_component =
+type probe_msg = Ping of string
+
+let probe_key : probe_msg Global_component.key = Global_component.key "probe"
+
+(* Same name, different identity and message type. *)
+let impostor_key : int Global_component.key = Global_component.key "probe"
+let nobody_key : unit Global_component.key = Global_component.key "nobody"
+
+let probe : (int, probe_msg, unit) Scene.concrete_global_component =
   {
-    init = (fun _ _ _ -> (0, { Scene.dead = false; post_processor = Fun.id }));
+    init = (fun _ _ -> (0, { Scene.dead = false; post_processor = Fun.id }));
     update = (fun _ env _ n bdata -> ((n, bdata), [], (env, false)));
     updaterec =
-      (fun _ env msg n bdata ->
+      (fun _ env (Ping text) n bdata ->
         ( (n + 1, bdata),
-          [
-            General_model.Parent
-              (SOMMsg
-                 (Scene.SOMSaveValue ("probe", msg ^ string_of_int (n + 1))));
-          ],
+          [ Scene.SOMSaveValue ("probe", text ^ string_of_int (n + 1)) ],
           env ));
     view = (fun _ _ _ _ -> Regl_builtin_programs.empty);
-    id = "probe";
+    key = probe_key;
   }
 
 let scene name msg runtime env =
@@ -44,14 +48,14 @@ let scene name msg runtime env =
                     (By_name "B");
                 ]
             | KeyDown "C" -> [ Scene.SOMChangeScene (By_name "C") ]
-            | KeyDown "L" ->
-                [
-                  Scene.SOMLoadGC
-                    (Global_component.gen_global_component probe "" None);
-                ]
+            | KeyDown "L" -> [ Scene.SOMLoadGC (Global_component.make probe) ]
             | KeyDown "P" ->
-                [ Scene.SOMCallGC ("probe", "ping"); SOMCallGC ("nobody", "x") ]
-            | KeyDown "U" -> [ Scene.SOMUnloadGC "probe" ]
+                [
+                  Scene.SOMCallGC (probe_key, Ping "ping");
+                  SOMCallGC (impostor_key, 7);
+                  SOMCallGC (nobody_key, ());
+                ]
+            | KeyDown "U" -> [ Scene.SOMUnloadGC probe_key ]
             | KeyDown "R" -> [ Scene.SOMReadValue "best"; SOMReadValue "none" ]
             | ValueRead { key; value } ->
                 [
@@ -158,6 +162,7 @@ let () =
 
 (* Transitions and global components through [Ui]. *)
 let () =
+  prerr_endline "test_ui: the next two errors are expected";
   let m, _ = Ui.init input () in
   assert (scene_name m = "A");
   let m = event m (KeyDown "T") in

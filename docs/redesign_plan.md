@@ -50,9 +50,10 @@ codegen are deleted.
 7. **Scenes get typed keys** instead of the global `'scenemsg` parameter
    (stage 5).
 8. **App registration is plain OCaml:** the `Ui.input` record in an `app.ml`.
-9. **Global components are unchanged:** they keep their base data (`dead`,
-   `post_processor`) and `string` messages for now.
-
+9. **Global components have typed keys** (after the redesign): a
+   `'msg Global_component.key` names an instance and its message type, like
+   scene keys; `SOMCallGC (key, msg)` and `SOMUnloadGC key`. They keep their
+   base data (`dead`, `post_processor`).
 ## Component API
 
 The signatures below are current. Stage 1 added them next to the old API with
@@ -252,3 +253,7 @@ window). Compilation does not verify rendering or audio.
   child reports 466 → 3.7 ms, one targeted message 445 → 0.38 ms, one
   message per child 2431 → 4.7 ms. `test/test_recursion.ml` compares it with a
   reference implementation on 3000 seeded random cases.
+- 2026-10-01: after the redesign, the remaining runtime issues were fixed:
+  storage reads arrive as a `ValueRead` event (ml-regl `b3836c3`), audio
+  cleanup uses `Regl_audio.ends_at` (ml-regl `b2c02aa`), and global
+  components got typed keys.

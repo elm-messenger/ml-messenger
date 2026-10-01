@@ -14,7 +14,12 @@ type data = {
 let trim_to_last_ten xs =
   if List.length xs >= 10 then match xs with _ :: tl -> tl | [] -> [] else xs
 
-let init opt _runtime _env _msg =
+(* This global component takes no messages. *)
+type msg = |
+
+let key : msg Global_component.key = Global_component.key "fps"
+
+let init opt _runtime _env =
   ( {
       last_times = [];
       fps = 0.;
@@ -39,15 +44,14 @@ let update _runtime env evnt data bdata =
         (env, false) )
   | _ -> ((data, bdata), [], (env, false))
 
-let updaterec _runtime env _msg data bdata = ((data, bdata), [], env)
+let updaterec _runtime _env (msg : msg) _data _bdata = match msg with _ -> .
 
 let view _runtime _env data _bdata =
   Regl_builtin_programs.textbox (0., 0.) data.size
     ("FPS: " ^ string_of_int (int_of_float data.fps))
     data.font (Color.rgba 0. 0. 0. 0.5)
 
-let gc_con opt () : (_, _) Scene.concrete_global_component =
-  { init = init opt; update; updaterec; view; id = "fps" }
+let gc_con opt () : (_, _, _) Scene.concrete_global_component =
+  { init = init opt; update; updaterec; view; key }
 
-let gen_gc opt target =
-  Global_component.gen_global_component (gc_con opt ()) "" target
+let gen_gc ?key opt = Global_component.make ?key (gc_con opt ())

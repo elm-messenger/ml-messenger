@@ -59,11 +59,11 @@ JS or desktop branches to the portable framework just to work around a host.
 - `docs/redesign_plan.md`: the in-progress component/scene redesign; read its
   current position before changing components or scenes.
 
-The `messenger` library is published as `ml-messenger` and is available to
-consumers as the wrapped `Messenger` module. `lib/extra` is the separate
-wrapped `Messenger_extra` library, published as `ml-messenger.extra`;
-applications using transitions or other helpers must
-list it in their Dune `libraries`. There are intentionally few `.mli` files,
+The framework core (`lib/`, wrapped module `Messenger`) is published as
+`ml-messenger.core` and re-exports `ml_regl_core`. `lib/extra` (wrapped module
+`Messenger_extra`) is published as `ml-messenger` and re-exports the core, so
+applications depend on `ml-messenger` alone (plus a backend) and get
+`Messenger`, `Messenger_extra`, and `Ml_regl_core`. There are intentionally few `.mli` files,
 so a new top-level binding can become public API; avoid accidental API growth.
 
 ## Core invariants

@@ -1,6 +1,12 @@
+; Published as ml-messenger, the library applications depend on: it contains
+; Messenger_extra and re-exports the core, so depending on ml-messenger brings
+; Messenger, Messenger_extra, and Ml_regl_core into scope.
+
 (library
  (name messenger_extra)
- (public_name ml-messenger.extra)
- (libraries ml_regl_core ml-messenger)
+ (public_name ml-messenger)
+ (libraries
+  ml_regl_core
+  (re_export messenger))
  (flags
   (:standard -warn-error -A)))

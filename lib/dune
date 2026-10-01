@@ -1,6 +1,11 @@
+; The framework core, published as ml-messenger.core. Its interface exposes
+; Ml_regl_core types, so dependents get that library too.
+
 (library
  (name messenger)
- (libraries ml_regl_core regl_backend)
- (public_name ml-messenger)
+ (public_name ml-messenger.core)
+ (libraries
+  (re_export ml_regl_core)
+  regl_backend)
  (flags
   (:standard -warn-error -A)))

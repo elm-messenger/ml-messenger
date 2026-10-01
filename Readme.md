@@ -53,11 +53,14 @@ your opam switch. Install ml-regl first with its own `install.sh`, then run:
 
 The script pins `ml-messenger` to this checkout, so opam installs the current
 branch's last commit; after changing ml-messenger, commit and rerun it. An
-application then lists the libraries and one backend in its `dune` file:
+application then lists `ml-messenger` and one backend in its `dune` file:
 
 ```dune
-(libraries ml-messenger ml-messenger.extra regl_js)       ; browser
-(libraries ml-messenger ml-messenger.extra regl_desktop)  ; native
+(libraries ml-messenger regl_js)       ; browser
+(libraries ml-messenger regl_desktop)  ; native
 ```
+
+`ml-messenger` brings `Messenger`, `Messenger_extra`, and `Ml_regl_core` into
+scope. `ml-messenger.core` is the framework without `Messenger_extra`.
 
 `test/messenger_test` shows the application layout.

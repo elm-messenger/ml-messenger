@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Install ml-messenger (the Messenger and Messenger_extra libraries) into the
-# current opam switch, so applications in other directories can use it:
+# Install ml-messenger into the current opam switch, so applications in other
+# directories can use it. Depending on ml-messenger brings Messenger,
+# Messenger_extra, and Ml_regl_core into scope; add one backend:
 #
-#   (libraries ml-messenger ml-messenger.extra regl_js)       ; browser
-#   (libraries ml-messenger ml-messenger.extra regl_desktop)  ; native
+#   (libraries ml-messenger regl_js)       ; browser
+#   (libraries ml-messenger regl_desktop)  ; native
 #
 # The ml-regl packages must be installed first (../ml-regl/install.sh). As
 # with ml-regl, the package is pinned to this git checkout, so opam installs
@@ -41,8 +42,8 @@ if [[ -n "$(git status --porcelain)" ]]; then
     echo "warning: uncommitted changes are not installed; opam installs the last commit" >&2
 fi
 
-# Messenger_extra used to be a separate opam package; it is now the
-# ml-messenger.extra library inside ml-messenger.
+# Messenger_extra used to be a separate opam package; it is now part of the
+# ml-messenger library.
 if opam pin list --short 2>/dev/null | grep -Fxq ml-messenger-extra; then
     echo "==> Removing the old ml-messenger-extra pin"
     opam pin remove -y --no-action ml-messenger-extra

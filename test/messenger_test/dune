@@ -7,7 +7,7 @@
  (name messenger_test)
  (modules
   (:standard \ main main_desktop))
- (libraries ml_regl_core ml-messenger messenger_extra)
+ (libraries ml-messenger)
  (flags
   (:standard -warn-error -A)))
 

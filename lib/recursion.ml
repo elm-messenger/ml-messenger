@@ -1,91 +1,99 @@
 open General_model
 
-let split_msgs msgs =
+(* Cost, for n models: an event costs O(n + M) for the M messages it produces;
+   each round of targeted messages costs O(n + m + d) for its m messages and d
+   deliveries. Messages are accumulated in reverse and reversed once, and a
+   round with many messages indexes them by target. *)
+
+(* Add [msgs] to the reversed accumulators of targeted and finished messages. *)
+let split_rev msgs acc =
   List.fold_left
-    (fun (unfinished, finished) -> function
-      | Parent x -> (unfinished, finished @ [ x ])
-      | Other (tar, msg) -> (unfinished @ [ (tar, msg) ], finished))
-    ([], []) msgs
+    (fun (targeted, finished) -> function
+      | Parent msg -> (targeted, msg :: finished)
+      | Other (tar, msg) -> ((tar, msg) :: targeted, finished))
+    acc msgs
 
-let rec update_one envro last_env evt objs last_objs last_msg_unfinished
-    last_msg_finished =
-  match objs with
-  | ele :: rest_objs ->
-      let new_obj, new_msg, (new_env, block) =
-        (unroll ele).update envro last_env evt
-      in
-      let unfinished_msg, finished_msg = split_msgs new_msg in
-      let all_unfinished = last_msg_unfinished @ unfinished_msg in
-      let all_finished = last_msg_finished @ finished_msg in
-      if block then
-        ( List.rev rest_objs @ (new_obj :: last_objs),
-          (all_unfinished, all_finished),
-          (new_env, block) )
-      else
-        update_one envro new_env evt rest_objs (new_obj :: last_objs)
-          all_unfinished all_finished
-  | [] ->
-      (last_objs, (last_msg_unfinished, last_msg_finished), (last_env, false))
+(* Targets are compared like [Hashtbl] compares keys. *)
+let same a b = compare a b = 0
 
-let update_once envro env evt objs =
-  update_one envro env evt (List.rev objs) [] [] []
+(* A round with fewer messages than this scans each model's targets instead of
+   indexing the messages: measured with 4000 models, the index already wins at
+   two messages. *)
+let index_threshold = 2
 
-let rec update_remain envro env (unfinished_msg, finished_msg) objs =
-  match unfinished_msg with
-  | [] -> (objs, finished_msg, env)
+(* Returns, for a model's targets, the messages addressed to any of them, in
+   send order. *)
+let deliveries (msgs : ('tar * 'msg) list) : 'tar list -> 'msg list =
+  if List.compare_length_with msgs index_threshold < 0 then fun targets ->
+    List.filter_map
+      (fun (tar, msg) ->
+        if List.exists (same tar) targets then Some msg else None)
+      msgs
+  else
+    let index = Hashtbl.create (List.length msgs) in
+    List.iteri (fun seq (tar, msg) -> Hashtbl.add index tar (seq, msg)) msgs;
+    function
+    | [] -> []
+    | [ tar ] ->
+        (* [find_all] returns the most recently added binding first. *)
+        List.rev_map snd (Hashtbl.find_all index tar)
+    | targets ->
+        List.sort_uniq compare targets
+        |> List.concat_map (Hashtbl.find_all index)
+        |> List.sort (fun (a, _) (b, _) -> Int.compare a b)
+        |> List.map snd
+
+(* Deliver targeted messages round by round until none remain. Each round visits
+   the models in order; messages they send go to the next round. *)
+let rec update_remain envro env targeted finished_rev objs =
+  match targeted with
+  | [] -> (objs, List.rev finished_rev, env)
   | _ ->
-      let new_objs, (new_unfinished_msg, new_finished_msg), new_env =
+      let for_model = deliveries targeted in
+      let env, objs_rev, acc, touched =
         List.fold_left
-          (fun (last_objs, (last_msg_unfinished, last_msg_finished), last_env)
-               ele ->
-            let msg_matched =
-              List.filter_map
-                (fun (tar, msg) ->
-                  if (unroll ele).matcher tar then Some msg else None)
-                unfinished_msg
-            in
-            match msg_matched with
-            | [] ->
-                ( last_objs @ [ ele ],
-                  (last_msg_unfinished, last_msg_finished),
-                  last_env )
-            | _ ->
-                let new_obj, (new_unfinished, new_finished), new_env2 =
+          (fun (env, objs_rev, acc, touched) obj ->
+            match for_model ((unroll obj).targets ()) with
+            | [] -> (env, obj :: objs_rev, acc, touched)
+            | msgs ->
+                let obj, env, acc =
                   List.fold_left
-                    (fun (last_obj, (last_unfinished, last_finished), last_env2)
-                         msg ->
-                      let new_ele, new_msgs, new_env3 =
-                        (unroll last_obj).updaterec envro last_env2 msg
+                    (fun (obj, env, acc) msg ->
+                      let obj, out, env =
+                        (unroll obj).updaterec envro env msg
                       in
-                      let unfinished, finished = split_msgs new_msgs in
-                      ( new_ele,
-                        (last_unfinished @ unfinished, last_finished @ finished),
-                        new_env3 ))
-                    (ele, ([], []), last_env)
-                    msg_matched
+                      (obj, env, split_rev out acc))
+                    (obj, env, acc) msgs
                 in
-                ( last_objs @ [ new_obj ],
-                  ( last_msg_unfinished @ new_unfinished,
-                    last_msg_finished @ new_finished ),
-                  new_env2 ))
-          ([], ([], []), env)
+                (env, obj :: objs_rev, acc, true))
+          (env, [], ([], finished_rev), false)
           objs
       in
-      update_remain envro new_env
-        (new_unfinished_msg, finished_msg @ new_finished_msg)
-        new_objs
+      let objs = if touched then List.rev objs_rev else objs in
+      let targeted_rev, finished_rev = acc in
+      update_remain envro env (List.rev targeted_rev) finished_rev objs
 
 let update_objects envro env evt objs =
-  let new_objs, (new_msg_unfinished, new_msg_finished), (new_env, new_block) =
-    update_once envro env evt objs
+  (* Visit models from the end of the list; [block] stops the traversal. *)
+  let rec visit env pending visited acc =
+    match pending with
+    | [] -> (visited, acc, (env, false))
+    | obj :: rest ->
+        let obj, out, (env, block) = (unroll obj).update envro env evt in
+        let acc = split_rev out acc in
+        if block then (List.rev_append rest (obj :: visited), acc, (env, true))
+        else visit env rest (obj :: visited) acc
   in
-  let res_obj, res_msg, res_env =
-    update_remain envro new_env (new_msg_unfinished, new_msg_finished) new_objs
+  let objs, (targeted_rev, finished_rev), (env, block) =
+    visit env (List.rev objs) [] ([], [])
   in
-  (res_obj, res_msg, (res_env, new_block))
+  let objs, finished, env =
+    update_remain envro env (List.rev targeted_rev) finished_rev objs
+  in
+  (objs, finished, (env, block))
 
 let update_objects_with_target envro env msgs objs =
-  update_remain envro env (msgs, []) objs
+  update_remain envro env msgs [] objs
 
 let remove_objects tar xs =
-  List.filter (fun x -> not ((unroll x).matcher tar)) xs
+  List.filter (fun x -> not (List.exists (same tar) ((unroll x).targets ()))) xs

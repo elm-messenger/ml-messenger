@@ -31,7 +31,7 @@ module B = struct
       update;
       updaterec;
       view;
-      matcher = (fun (data : data) tar -> String.equal tar data.id);
+      targets = (fun (data : data) -> [ data.id ]);
     }
 end
 
@@ -74,7 +74,7 @@ module A = struct
       update;
       updaterec;
       view;
-      matcher = (fun data tar -> String.equal tar data.init.id);
+      targets = (fun data -> [ data.init.id ]);
     }
 end
 
@@ -162,7 +162,7 @@ module Starter = struct
       update = report Ticked;
       updaterec = (fun _ env _ data -> (data, [], env));
       view = (fun _ _ _ -> (Regl_builtin_programs.empty, 0));
-      matcher = (fun _ _ -> false);
+      targets = (fun _ -> []);
     }
 end
 

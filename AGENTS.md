@@ -68,7 +68,9 @@ so a new top-level binding can become public API; avoid accidental API growth.
 - Treat scene/component updates as functional state transitions. Thread the
   returned environment through every update; do not discard a child's or
   global component's updated environment.
-- `General_model.Other (target, msg)` is routed to every matching model.
+- `General_model.Other (target, msg)` is delivered to every model whose
+  `targets` include `target`. Targets are compared structurally and hashed, so
+  they must not contain functions.
   `General_model.Parent (OtherMsg msg)` bubbles a normal message to the parent,
   while `Parent (SOMMsg som)` bubbles a `Scene.scene_output_msg` to the top-level
   handler.
@@ -78,6 +80,11 @@ so a new top-level binding can become public API; avoid accidental API growth.
 - Targeted messages are processed until none remain. Never create an
   unconditional target-message cycle; it will make the recursive dispatcher
   fail to terminate.
+- Routing is linear: an event costs O(n + M) for n models and M emitted
+  messages, and each round of targeted messages O(n + m + deliveries). Keep it
+  that way: accumulate in reverse instead of appending with `@`, and look
+  messages up by target (`Recursion.deliveries`) instead of testing every
+  model against every message.
 - The outer `Base.env.common_data` holds the active scene for global
   components. Scenes receive `Base.remove_common_data env`; composite scenes
   add their own common data before calling children and remove it afterward.
@@ -102,7 +109,8 @@ Applications are plain OCaml; there is no code generation.
   `main_desktop.ml` for the native backend.
 - A component module defines its own `msg`, `init`, and `data` types and a
   `component` record literal (`{ Component.init; update; updaterec; view;
-  matcher }`). It never names its parent's message type.
+  targets }`, where `targets` lists the addresses it answers to). It never
+  names its parent's message type.
 - A parent (scene or component) defines the union of its direct children's
   messages and one `Component.port` per child kind, creates children with
   `Component.make`, and updates them with `Component.update_children` or

@@ -11,7 +11,7 @@ let gen_global_component concomp gcmsg gctar runtime env =
         (fun runtime env msg data bdata ->
           concomp.updaterec runtime env msg data bdata);
       view = (fun runtime env data bdata -> concomp.view runtime env data bdata);
-      matcher = (fun _ _ tar -> tar = id);
+      targets = (fun _ _ -> [ id ]);
     }
   in
   General_model.abstract transformed gcmsg runtime env

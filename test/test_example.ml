@@ -84,3 +84,23 @@ let () =
   assert (draws scene "Last panel count: 1");
   let scene = steps scene [ KeyDown "Return" ] in
   assert (draws scene "scene ping 2")
+
+let () =
+  (* The camera reset follows the configured view size, not a constant. *)
+  runtime.virtual_size <- (800., 600.);
+  let scene = App.Scenes.Camera.Model.scene None runtime env in
+  let scene, _, moved =
+    (Scene.unroll scene).update runtime env (KeyDown "Right")
+  in
+  assert (moved.global_data.camera.x = env.global_data.camera.x +. 100.);
+  let _, _, reset = (Scene.unroll scene).update runtime moved (KeyDown "R") in
+  assert (reset.global_data.camera = Camera.default ~width:800. ~height:600.);
+  runtime.virtual_size <- (1920., 1080.)
+
+let () =
+  let scene = App.Scenes.Audio.Model.scene None runtime env in
+  let _, soms, _ = (Scene.unroll scene).update runtime env (KeyDown "Return") in
+  assert (
+    List.exists
+      (function Scene.SOMPlayAudio (_, "test", _) -> true | _ -> false)
+      soms)

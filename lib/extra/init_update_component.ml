@@ -29,7 +29,7 @@ type ('init, 'data, 'msg, 'pmsg, 'cdata, 'userdata, 'tar) spec = {
     ('cdata, 'userdata) Base.env ->
     'data ->
     Regl_common.renderable * int;
-  matcher : 'data -> 'tar -> bool;
+  targets : 'data -> 'tar list;
 }
 (** Write it as a record literal, like [Component.spec]. *)
 
@@ -48,7 +48,7 @@ let to_component_spec
         let data, cmds, env = spec.updaterec runtime env msg data in
         ((data, started), cmds, env));
     view = (fun runtime env (data, _) -> spec.view runtime env data);
-    matcher = (fun (data, _) tar -> spec.matcher data tar);
+    targets = (fun (data, _) -> spec.targets data);
   }
 
 (** Like [Component.make]; the port sees the component's own data. *)

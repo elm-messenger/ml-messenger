@@ -53,5 +53,5 @@ let component =
     update;
     updaterec;
     view;
-    matcher = (fun _data target -> String.equal target "panel");
+    targets = (fun _data -> [ "panel" ]);
   }

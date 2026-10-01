@@ -34,5 +34,5 @@ let component =
     update;
     updaterec;
     view;
-    matcher = (fun data target -> String.equal target data.id);
+    targets = (fun data -> [ data.id ]);
   }

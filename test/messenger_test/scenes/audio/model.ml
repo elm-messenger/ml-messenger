@@ -12,7 +12,7 @@ let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
           match evnt with
           | Regl_proto.KeyDown "Backspace" ->
               [ Scene.SOMChangeScene (By_name "Home") ]
-          | KeyDown ("Space" | "Enter") ->
+          | KeyDown ("Space" | "Return") ->
               [ Scene.SOMPlayAudio (0, "test", Audio_base.A_once None) ]
           | KeyDown "S" -> [ Scene.SOMStopAudio Audio_base.All_audio ]
           | _ -> []
@@ -24,7 +24,7 @@ let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
           [
             Regl_builtin_programs.clear Color.white;
             Regl_builtin_programs.textbox (20., 20.) 28.
-              "Audio: Space/Enter play, S stop, Backspace home" "firacode"
+              "Audio: Space/Return play, S stop, Backspace home" "firacode"
               Color.black;
           ]);
   }

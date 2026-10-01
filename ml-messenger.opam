@@ -5,7 +5,7 @@ description:
   "The OCaml port of the Elm messenger framework, sitting on top of the ml-regl rendering backend."
 maintainer: ["Yiming Xiang <yiming@cs.utexas.edu>"]
 authors: ["Yiming Xiang <yiming@cs.utexas.edu>"]
-license: "LICENSE"
+license: "BSD-3-Clause"
 homepage: "https://github.com/elm-messenger/ml-messenger"
 bug-reports: "https://github.com/elm-messenger/ml-messenger/issues"
 depends: [

@@ -48,5 +48,5 @@ let component =
     update;
     updaterec;
     view;
-    matcher = (fun (data : data) target -> target = data.id);
+    targets = (fun (data : data) -> [ data.id ]);
   }

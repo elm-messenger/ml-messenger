@@ -33,7 +33,9 @@ type ('data,
     'bdata ->
     ('data * 'bdata) * ('tar, 'msg, 'sommsg) msg list * 'env;
   view : 'envro -> 'env -> 'data -> 'bdata -> 'ren;
-  matcher : 'data -> 'bdata -> 'tar -> bool;
+  targets : 'data -> 'bdata -> 'tar list;
+      (** The targets this model answers to; compared structurally, so they must
+          not contain functions. *)
 }
 
 type ('envro,
@@ -96,7 +98,7 @@ and ('envro,
     * ('tar, 'msg, 'sommsg) msg list
     * 'env;
   view : 'envro -> 'env -> 'ren;
-  matcher : 'tar -> bool;
+  targets : unit -> 'tar list;
   base_data : 'bdata;
   update_base_data :
     'bdata ->
@@ -146,7 +148,7 @@ let of_data (type data envro env event tar msg ren bdata sommsg)
         update;
         updaterec;
         view = (fun envro env -> conmodel.view envro env data base);
-        matcher = conmodel.matcher data base;
+        targets = (fun () -> conmodel.targets data base);
         base_data = base;
         update_base_data;
       }
@@ -159,8 +161,6 @@ let abstract conmodel init_msg init_envro init_env =
 
 let view_model_list envro env models =
   List.map (fun model -> (unroll model).view envro env) models
-
-type ('data, 'tar) matcher = 'data -> 'tar -> bool
 
 let update_result_remap f model =
   let rec change m =

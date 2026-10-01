@@ -39,7 +39,10 @@ type ('init, 'data, 'msg, 'pmsg, 'cdata, 'userdata, 'tar) spec = {
     ('cdata, 'userdata) Base.env ->
     'data ->
     Regl_common.renderable * int;
-  matcher : 'data -> 'tar -> bool;
+  targets : 'data -> 'tar list;
+      (** Targets this component answers to ([Other], [Sibling], and [send]
+          address them). They are compared structurally, so they must not
+          contain functions. *)
 }
 (** A component definition. Write it as a record literal so it stays polymorphic
     in the parent's types. *)
@@ -102,7 +105,7 @@ let make (port : ('data, 'msg, 'pmsg, 'view) port)
               let data, cmds, env = spec.updaterec runtime env msg data in
               ((data, port.inspect data), List.map lift cmds, env));
       view = (fun runtime env data _ -> spec.view runtime env data);
-      matcher = (fun data _ tar -> spec.matcher data tar);
+      targets = (fun data _ -> spec.targets data);
     }
   in
   let data = spec.init runtime env init in

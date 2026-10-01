@@ -26,7 +26,7 @@ let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
   {
     init = (fun _ _ _ -> ());
     update =
-      (fun _runtime env evnt () ->
+      (fun runtime env evnt () ->
         match evnt with
         | Regl_proto.KeyDown "Backspace" ->
             ((), [ Scene.SOMChangeScene (By_name "Home") ], env)
@@ -37,6 +37,7 @@ let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
         | KeyDown "=" -> ((), [], zoom_camera env 1.25)
         | KeyDown "-" -> ((), [], zoom_camera env 0.8)
         | KeyDown "R" ->
+            let width, height = Base.get_virtual_size runtime in
             ( (),
               [],
               {
@@ -44,7 +45,7 @@ let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
                 global_data =
                   {
                     env.global_data with
-                    camera = Messenger.Camera.default ~width:1920. ~height:1080.;
+                    camera = Messenger.Camera.default ~width ~height;
                   };
               } )
         | _ -> ((), [], env));

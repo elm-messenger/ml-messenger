@@ -11,7 +11,7 @@
 
 (maintainers "Yiming Xiang <yiming@cs.utexas.edu>")
 
-(license LICENSE)
+(license BSD-3-Clause)
 
 (package
  (name ml-messenger)

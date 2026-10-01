@@ -18,9 +18,10 @@ codegen are deleted.
 
 1. **A component owns its types.** A component module defines `type msg`,
    `type init`, `type data`, and `let component = { Component.init; update;
-   updaterec; view; matcher }` (a record literal, so it stays polymorphic).
+   updaterec; view; targets }` (a record literal, so it stays polymorphic).
    One `msg` type carries both what the component reports and what it
-   receives.
+   receives. `targets` lists the addresses the component answers to; it
+   replaced a `matcher` predicate so routing can index messages by target.
 2. **The parent owns the union of its children.** It defines
    `type msg = Button of Button.Model.msg | Slider of Slider.Model.msg` and one
    port per child kind:
@@ -75,7 +76,7 @@ type ('init, 'data, 'msg, 'pmsg, 'cdata, 'userdata, 'tar) spec = {
   update : runtime -> env -> regl_event -> 'data -> 'data * cmd list * (env * bool);
   updaterec : runtime -> env -> 'msg -> 'data -> 'data * cmd list * env;
   view : runtime -> env -> 'data -> renderable * int;
-  matcher : 'data -> 'tar -> bool;
+  targets : 'data -> 'tar list;
 }
 
 type ('data, 'msg, 'pmsg, 'view) port = {
@@ -243,3 +244,11 @@ window). Compilation does not verify rendering or audio.
   the scene-key change does not have to update code that is about to go.
 - 2026-10-01: stage 4 done.
 - 2026-10-01: stage 5 done. The redesign's required stages are complete.
+- 2026-10-01: routing made linear. `matcher` (a predicate) became `targets`
+  (a list of addresses) in `General_model`, `Component`,
+  `Init_update_component`, and global components. `Recursion` accumulates in
+  reverse and indexes each round's messages by target (scanning when a round
+  has a single message). Scratch benchmark at n = 16000: an event where every
+  child reports 466 → 3.7 ms, one targeted message 445 → 0.38 ms, one
+  message per child 2431 → 4.7 ms. `test/test_recursion.ml` compares it with a
+  reference implementation on 3000 seeded random cases.

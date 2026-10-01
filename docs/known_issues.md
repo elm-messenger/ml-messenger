@@ -20,8 +20,3 @@ of writing.
 
 - **Global component messaging is stringly typed.** `Scene.gc_msg` and
   `Scene.gc_target` are both `string` (`lib/scene.ml:107-108`).
-- **Audio cleanup cannot see transforms.** `Audio.remove_finished_audio`
-  derives a one-shot sound's end time from its original play options (rate and
-  start offset). `Regl_audio.audio` is abstract, so an `offset_by` applied later
-  through `SOMTransformAudio` is not taken into account, and the sound may be
-  stopped early.

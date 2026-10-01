@@ -32,33 +32,16 @@ let config_of_option = function
           loop;
         }
 
-let is_loop = function Audio_base.A_loop _ -> true | A_once _ -> false
-
-(* Wall-clock play time in ms of a one-shot sound, accounting for its start
-   offset and playback rate; [None] if it never ends on its own. *)
-let once_duration src = function
-  | Audio_base.A_loop _ -> None
-  | A_once common ->
-      let common =
-        Option.value common ~default:Audio_base.default_common_option
-      in
-      let remaining =
-        Float.max 0. ((Regl_audio.length src *. 1000.) -. common.start)
-      in
-      if common.rate > 0. then Some (remaining /. common.rate) else None
-
+(* A sound is dropped once [Regl_audio.ends_at] says it has finished, which
+   accounts for its rate, start offset, and later transforms; looping sounds
+   never end on their own. *)
 let remove_finished_audio (repo : Internal.audio_repo) now =
   repo.playing <-
     List.filter
       (fun (pa : Internal.playing_audio) ->
-        is_loop pa.opt
-        ||
-        match Hashtbl.find_opt repo.audio pa.name with
-        | None -> false
-        | Some src -> (
-            match once_duration src pa.opt with
-            | None -> true
-            | Some duration -> now -. pa.start_time < duration))
+        match Regl_audio.ends_at pa.audio with
+        | None -> true
+        | Some ends -> Hashtbl.mem repo.audio pa.name && now < ends)
       repo.playing
 
 let play_audio (repo : Internal.audio_repo) channel name opt now =

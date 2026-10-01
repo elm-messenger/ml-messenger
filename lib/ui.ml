@@ -63,7 +63,8 @@ let load_resource_command (runtime : Internal.runtime) key = function
         Some (Regl_proto.load_audio url)
       else None
   | Font_res (image, json) -> Some (Regl_proto.load_font key image json)
-  | Program_res program -> Some (Regl_proto.create_regl_program key program)
+  | Program_res (program, shader_language) ->
+      Some (Regl_proto.create_regl_program ~shader_language key program)
   | Data_res path ->
       if add_waiting runtime.pending_data_paths path key then
         Some (Regl_proto.load_file path)

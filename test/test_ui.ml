@@ -154,6 +154,35 @@ let () =
   in
   assert (count (Regl_proto.load_file "g.json") outputs = 1)
 
+(* A program resource is created in the shader language it names. *)
+let () =
+  let m, _ = Ui.init input () in
+  let program : Regl_program.regl_program =
+    {
+      frag = "";
+      vert = "";
+      attributes = None;
+      uniforms = None;
+      elements = None;
+      primitive = None;
+      count = None;
+    }
+  in
+  List.iter
+    (fun shader_language ->
+      let _, outputs =
+        Ui.handle_som input
+          (SOMLoadResource ("p", Program_res (program, shader_language)))
+          m
+      in
+      assert (
+        outputs
+        = [ Regl_proto.create_regl_program ~shader_language "p" program ]))
+    [ Regl_proto.Glsl; GlslEs100 ];
+  assert (
+    Regl_proto.create_regl_program ~shader_language:Glsl "p" program
+    <> Regl_proto.create_regl_program ~shader_language:GlslEs100 "p" program)
+
 (* The current scene is recorded only once a scene is actually loaded. *)
 let () =
   prerr_endline "test_ui: the next error is expected";

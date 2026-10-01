@@ -4,7 +4,9 @@ type resource_def =
   | Texture_res of string * Regl_proto.texture_options option
   | Audio_res of string
   | Font_res of string * string
-  | Program_res of Regl_program.regl_program
+  | Program_res of Regl_program.regl_program * Regl_proto.shader_language
+      (** [GlslEs100] works on both hosts (the desktop host translates it);
+          [Glsl] is each host's native dialect. *)
   | Data_res of string
 
 type resource_defs = (string * resource_def) list

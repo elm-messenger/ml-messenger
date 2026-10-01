@@ -15,7 +15,7 @@
 
 (package
  (name ml-messenger)
- (synopsis "A functional, message-driven 2D game engine for OCaml.")
+ (synopsis "A functional, message-driven 2D game engine for OCaml")
  (description "The OCaml port of the Elm messenger framework, sitting on top of the ml-regl rendering backend.")
  (depends
   (ocaml

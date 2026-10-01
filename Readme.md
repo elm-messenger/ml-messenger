@@ -41,3 +41,23 @@ fully portable across web and desktop.
 dune build
 dune test
 ```
+
+## Installing
+
+To use ml-messenger from an application in another directory, install it into
+your opam switch. Install ml-regl first with its own `install.sh`, then run:
+
+```sh
+./install.sh
+```
+
+The script pins `ml-messenger` to this checkout, so opam installs the current
+branch's last commit; after changing ml-messenger, commit and rerun it. An
+application then lists the libraries and one backend in its `dune` file:
+
+```dune
+(libraries ml-messenger ml-messenger.extra regl_js)       ; browser
+(libraries ml-messenger ml-messenger.extra regl_desktop)  ; native
+```
+
+`test/messenger_test` shows the application layout.

@@ -190,6 +190,10 @@ opam update ml_regl_core regl_backend regl_desktop regl_js
 opam reinstall -y ml_regl_core regl_backend regl_desktop regl_js
 ```
 
+`./install.sh` installs this repository's own package into the opam switch
+(pinned to this checkout, so it installs the last commit) for applications in
+other directories; it needs the `ml-regl` packages installed first.
+
 When changing shared rendering/backend behavior, also verify `../ml-regl`.
 Its portable unit test is `dune runtest`. Browser test bundles live under its
 `test/` and use the harnesses in `../ml-regl/html/`. Native builds require a

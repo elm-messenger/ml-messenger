@@ -19,8 +19,8 @@ let sprite_sheet =
              let opts =
                Some
                  {
-                   Regl_proto.mag = Some MagNearest;
-                   min = None;
+                   Regl_proto.default_texture_options with
+                   mag = Some MagNearest;
                    crop = Some ((32 * col, 32 * row), (32, 32));
                  }
              in

@@ -23,7 +23,7 @@ let view _runtime _env data =
 
 let update runtime env evnt data =
   let open Messenger_extra in
-  let to_home = ("Home", None) in
+  let to_home = Scene.By_name "Home" in
   let soms =
     match evnt with
     | Regl_proto.KeyDown "Backspace" | KeyDown ("Digit1" | "1") ->
@@ -74,4 +74,4 @@ let init _runtime _env _msg = { frame = 0 }
 let scenecon : (_, _, _, _, _, _, _) Scene.concrete_scene =
   { init; update; view }
 
-let scene _msg runtime env = Scene.abstract scenecon None runtime env
+let scene msg runtime env = Scene.abstract scenecon msg runtime env

@@ -1,15 +1,22 @@
 open Ml_regl_core
 open Messenger
-module CB = Components.Component_base
+module Button = Components.Button.Model
+module Slider = Components.Slider.Model
 
-type component =
-  ( Scene_base.scene_common_data,
-    Lib.User_data.user_data,
-    CB.component_target,
-    CB.component_msg,
-    CB.base_data,
-    Mgl_base.scene_msg )
-  Component.abstract_component
+(* The union of this scene's children, owned by the scene. *)
+type msg = Button of Button.msg | Slider of Slider.msg
+
+let button =
+  Component.port
+    (fun msg -> Button msg)
+    (function Button msg -> Some msg | _ -> None)
+
+let slider =
+  Component.port
+    (fun msg -> Slider msg)
+    (function Slider msg -> Some msg | _ -> None)
+
+type component = (unit, Lib.User_data.user_data, string, msg, unit) Component.t
 
 type data = {
   components : component list;
@@ -18,49 +25,29 @@ type data = {
 }
 
 let init runtime env _msg =
-  let button_init =
-    {
-      CB.button_center = (200., 200.);
-      button_size = (100., 50.);
-      button_color = Color.green;
-      button_content = "NICE";
-    }
-  in
-  let slider_init =
-    {
-      CB.slider_init_value = 0.5;
-      slider_center = (200., 300.);
-      slider_width = 300.;
-    }
-  in
   {
     components =
       [
-        Components.Button.Model.component (CB.ButtonInitMsg button_init) runtime
-          env;
-        Components.Slider.Model.component (CB.SliderInitMsg slider_init) runtime
-          env;
+        Component.make button Button.component
+          {
+            Button.center = (200., 200.);
+            size = (100., 50.);
+            color = Color.green;
+            content = "NICE";
+          }
+          runtime env;
+        Component.make slider Slider.component
+          { Slider.value = 0.5; center = (200., 300.); width = 300. }
+          runtime env;
       ];
     button_status = "IDLE";
     slider_value = 0.5;
   }
 
-let handle_component_msg data env = function
-  | General_model.SOMMsg som -> (data, [ som ], env)
-  | OtherMsg (CB.ButtonUpdateMsg CB.ButtonPressed) ->
-      ({ data with button_status = "PRESSED" }, [], env)
-  | OtherMsg (CB.ButtonUpdateMsg CB.ButtonReleased) ->
-      ({ data with button_status = "IDLE" }, [], env)
-  | OtherMsg (CB.SliderUpdateMsg value) ->
-      ({ data with slider_value = value }, [], env)
-  | _ -> (data, [], env)
-
-let handle_component_msgs data env msgs =
-  List.fold_left
-    (fun (data, soms, env) msg ->
-      let data, new_soms, env = handle_component_msg data env msg in
-      (data, soms @ new_soms, env))
-    (data, [], env) msgs
+let handle data = function
+  | Button Pressed -> { data with button_status = "PRESSED" }
+  | Button Released -> { data with button_status = "IDLE" }
+  | Slider (Changed value) -> { data with slider_value = value }
 
 let update runtime env evnt data =
   match evnt with
@@ -69,17 +56,14 @@ let update runtime env evnt data =
         [
           Messenger_extra.Transition_model.gen_mixed_transition_som
             (Messenger_extra.Transition_transitions.fade_mix, 1000.)
-            ("Home", None);
+            (Scene.By_name "Home");
         ],
         env )
   | _ ->
-      let comps1, msgs1, (env1, _block) =
-        Component.update_components runtime env evnt data.components
+      let components, msgs, soms, (env, _block) =
+        Component.update_children runtime env evnt data.components
       in
-      let data1, sommsgs, env2 =
-        handle_component_msgs { data with components = comps1 } env1 msgs1
-      in
-      (data1, sommsgs, env2)
+      (List.fold_left handle { data with components } msgs, soms, env)
 
 let view runtime env data =
   Regl_common.group []
@@ -97,4 +81,4 @@ let view runtime env data =
 let scenecon : (_, _, _, _, _, _, _) Scene.concrete_scene =
   { init; update; view }
 
-let scene _msg runtime env = Scene.abstract scenecon None runtime env
+let scene msg runtime env = Scene.abstract scenecon msg runtime env

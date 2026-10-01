@@ -10,10 +10,9 @@ homepage: "https://github.com/elm-messenger/ml-messenger"
 bug-reports: "https://github.com/elm-messenger/ml-messenger/issues"
 depends: [
   "dune" {>= "3.19"}
-  "ocaml"
+  "ocaml" {>= "5.1"}
   "ml_regl_core"
   "regl_backend"
-  "otoml"
   "js_of_ocaml" {with-test}
   "regl_js" {with-test}
   "odoc" {with-doc}

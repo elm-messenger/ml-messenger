@@ -1,9 +1,9 @@
 open Ml_regl_core
 
-type ('userdata, 'scenemsg) t = {
+type 'userdata t = {
   env : (unit, 'userdata) Base.env;
   runtime : Internal.runtime;
-  scene : ('userdata, 'scenemsg) Scene.m_abstract_scene;
+  scene : 'userdata Scene.m_abstract_scene;
 }
 
 let update_vsr vsr evnt =

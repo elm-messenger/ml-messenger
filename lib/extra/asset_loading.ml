@@ -63,7 +63,7 @@ let view runtime _env data _bdata =
   in
   Regl_common.group [] (Regl_builtin_programs.clear Color.black :: spinner)
 
-let gc_con () : (_, _, _) Scene.concrete_global_component =
+let gc_con () : (_, _) Scene.concrete_global_component =
   { init = init (); update; updaterec; view; id = "assetloading" }
 
 let gen_gc target = Global_component.gen_global_component (gc_con ()) "" target

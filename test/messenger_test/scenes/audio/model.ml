@@ -11,7 +11,7 @@ let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
         let soms =
           match evnt with
           | Regl_proto.KeyDown "Backspace" ->
-              [ Scene.SOMChangeScene (None, "Home") ]
+              [ Scene.SOMChangeScene (By_name "Home") ]
           | KeyDown ("Space" | "Enter") ->
               [ Scene.SOMPlayAudio (0, "test", Audio_base.A_once None) ]
           | KeyDown "S" -> [ Scene.SOMStopAudio Audio_base.All_audio ]
@@ -29,4 +29,4 @@ let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
           ]);
   }
 
-let scene _msg runtime env = Scene.abstract scene_con None runtime env
+let scene msg runtime env = Scene.abstract scene_con msg runtime env

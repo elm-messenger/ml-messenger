@@ -1,57 +1,40 @@
 open Ml_regl_core
 open Messenger
-module Component_base = Mgl_base.Component_base
-open Component_base
-module Msg = Mgl_base.Msg.Scenes.Portable_components.Panel_msg
+module Badge = Pcomp.Badge.Model
 
-type data = { count : int }
+type msg = Ping | Updated of int
 
-let init _runtime _env = function
-  | Scenes_Portable_components_Panel_msg_Msg Msg.Init -> ({ count = 0 }, ())
-  | _ -> ({ count = 0 }, ())
+(* The scene hands the panel a way to address the badge in the scene's own
+   message type; the panel never names that type. *)
+type 'p init = { to_badge : Badge.msg -> 'p }
+type 'p data = { count : int; to_badge : Badge.msg -> 'p }
 
-let update _runtime env evnt data basedata =
+let init _runtime _env (init : _ init) = { count = 0; to_badge = init.to_badge }
+let to_badge data msg = Component.Sibling ("badge", data.to_badge msg)
+
+let update _runtime env evnt data =
   match evnt with
   | Regl_proto.KeyDown "Space" ->
       let count = data.count + 1 in
-      ( ({ count }, basedata),
+      ( { data with count },
         [
-          General_model.Other
-            ( "badge",
-              Pcomp_Badge_Model_Msg
-                (Pcomp.Badge.Model.SetText ("panel ping " ^ string_of_int count))
-            );
-          General_model.Parent
-            (OtherMsg
-               (Scenes_Portable_components_Panel_msg_Msg
-                  (Msg.PortableUpdated count)));
+          to_badge data (Badge.Set_text ("panel ping " ^ string_of_int count));
+          Component.Parent (Updated count);
         ],
         (env, false) )
-  | KeyDown "F" ->
-      ( (data, basedata),
-        [
-          General_model.Other
-            ("badge", Pcomp_Badge_Model_Msg Pcomp.Badge.Model.Flash);
-        ],
-        (env, false) )
-  | _ -> ((data, basedata), [], (env, false))
+  | KeyDown "F" -> (data, [ to_badge data Badge.Flash ], (env, false))
+  | _ -> (data, [], (env, false))
 
-let updaterec _runtime env msg data basedata =
+let updaterec _runtime env msg data =
   match msg with
-  | Scenes_Portable_components_Panel_msg_Msg Msg.PingPortable ->
+  | Ping ->
       let count = data.count + 1 in
-      ( ({ count }, basedata),
-        [
-          General_model.Other
-            ( "badge",
-              Pcomp_Badge_Model_Msg
-                (Pcomp.Badge.Model.SetText ("scene ping " ^ string_of_int count))
-            );
-        ],
+      ( { data with count },
+        [ to_badge data (Badge.Set_text ("scene ping " ^ string_of_int count)) ],
         env )
-  | _ -> ((data, basedata), [], env)
+  | Updated _ -> (data, [], env)
 
-let view _runtime _env data _basedata =
+let view _runtime _env data =
   ( Regl_common.group []
       [
         Regl_builtin_programs.rect_centered (240., 220.) (320., 180.) 0.
@@ -64,10 +47,11 @@ let view _runtime _env data _basedata =
       ],
     0 )
 
-let matcher _data _basedata target = target = "panel"
-
-let componentcon : (_, _, _, _, _, _, _) Component.concrete_user_component =
-  { init; update; updaterec; view; matcher }
-
-let component msg runtime env =
-  Component.gen_component componentcon msg runtime env
+let component =
+  {
+    Component.init;
+    update;
+    updaterec;
+    view;
+    matcher = (fun _data target -> String.equal target "panel");
+  }

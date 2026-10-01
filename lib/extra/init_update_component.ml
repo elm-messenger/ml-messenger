@@ -1,64 +1,64 @@
+open Ml_regl_core
 open Messenger
 
-type ('cdata,
-       'data,
-       'userdata,
-       'tar,
-       'msg,
-       'bdata,
-       'scenemsg)
-     concrete_iu_component = {
-  init : ('cdata, 'userdata, 'msg, 'data, 'bdata) Component.component_init;
-  init_update :
-    ( 'cdata,
-      'data,
-      'userdata,
-      'scenemsg,
-      'tar,
-      'msg,
-      'bdata )
-    Component.component_update;
-  update :
-    ( 'cdata,
-      'data,
-      'userdata,
-      'scenemsg,
-      'tar,
-      'msg,
-      'bdata )
-    Component.component_update;
+(* A component whose first update runs [init_update] instead of [update]. *)
+
+type ('data, 'msg, 'pmsg, 'cdata, 'userdata, 'tar) update =
+  Internal.runtime ->
+  ('cdata, 'userdata) Base.env ->
+  Regl_proto.regl_event ->
+  'data ->
+  'data
+  * ('msg, 'pmsg, 'tar, 'userdata) Component.cmd list
+  * (('cdata, 'userdata) Base.env * bool)
+
+type ('init, 'data, 'msg, 'pmsg, 'cdata, 'userdata, 'tar) spec = {
+  init : Internal.runtime -> ('cdata, 'userdata) Base.env -> 'init -> 'data;
+  init_update : ('data, 'msg, 'pmsg, 'cdata, 'userdata, 'tar) update;
+  update : ('data, 'msg, 'pmsg, 'cdata, 'userdata, 'tar) update;
   updaterec :
-    ( 'cdata,
-      'data,
-      'userdata,
-      'scenemsg,
-      'tar,
-      'msg,
-      'bdata )
-    Component.component_updaterec;
-  view : ('cdata, 'userdata, 'data, 'bdata) Component.component_view;
-  matcher : ('data, 'bdata, 'tar) Component.component_matcher;
+    Internal.runtime ->
+    ('cdata, 'userdata) Base.env ->
+    'msg ->
+    'data ->
+    'data
+    * ('msg, 'pmsg, 'tar, 'userdata) Component.cmd list
+    * ('cdata, 'userdata) Base.env;
+  view :
+    Internal.runtime ->
+    ('cdata, 'userdata) Base.env ->
+    'data ->
+    Regl_common.renderable * int;
+  matcher : 'data -> 'tar -> bool;
 }
+(** Write it as a record literal, like [Component.spec]. *)
 
-let res_map (((data, bdata), msgs, envres) : ('data * 'bdata) * 'msgs * 'envres)
-    inited =
-  (((data, inited), bdata), msgs, envres)
+let to_component_spec
+    (spec : ('init, 'data, 'msg, 'pmsg, 'cdata, 'userdata, 'tar) spec) :
+    ('init, 'data * bool, 'msg, 'pmsg, 'cdata, 'userdata, 'tar) Component.spec =
+  {
+    init = (fun runtime env init -> (spec.init runtime env init, false));
+    update =
+      (fun runtime env evnt (data, started) ->
+        let update = if started then spec.update else spec.init_update in
+        let data, cmds, res = update runtime env evnt data in
+        ((data, true), cmds, res));
+    updaterec =
+      (fun runtime env msg (data, started) ->
+        let data, cmds, env = spec.updaterec runtime env msg data in
+        ((data, started), cmds, env));
+    view = (fun runtime env (data, _) -> spec.view runtime env data);
+    matcher = (fun (data, _) tar -> spec.matcher data tar);
+  }
 
-let to_concrete_user_component comp =
-  let init runtime env msg =
-    let data, bdata = comp.init runtime env msg in
-    ((data, false), bdata)
+(** Like [Component.make]; the port sees the component's own data. *)
+let make (port : ('data, 'msg, 'pmsg, 'view) Component.port) spec init runtime
+    env =
+  let port : ('data * bool, 'msg, 'pmsg, 'view) Component.port =
+    {
+      wrap = port.wrap;
+      unwrap = port.unwrap;
+      inspect = (fun (data, _) -> port.inspect data);
+    }
   in
-  let update runtime env evnt (data, inited) bdata =
-    if inited then res_map (comp.update runtime env evnt data bdata) true
-    else res_map (comp.init_update runtime env evnt data bdata) true
-  in
-  let updaterec runtime env msg (data, inited) bdata =
-    res_map (comp.updaterec runtime env msg data bdata) inited
-  in
-  let view runtime env (data, _) bdata = comp.view runtime env data bdata in
-  let matcher (data, _) bdata target = comp.matcher data bdata target in
-  { General_model.init; update; updaterec; view; matcher }
-
-let gen_iu_component comp =
-  Component.gen_component (to_concrete_user_component comp)
+  Component.make port (to_component_spec spec) init runtime env

@@ -1,86 +1,64 @@
 open Ml_regl_core
 open Messenger
-module Component_base = Mgl_base.Component_base
-module Panel_msg = Mgl_base.Msg.Scenes.Portable_components.Panel_msg
-open Component_base
+module Panel = Components.Panel.Model
+module Badge = Pcomp.Badge.Model
 
-type scene_common_data = unit
+(* The union of this scene's children. The badge comes from another directory
+   and is used exactly like the local panel. *)
+type msg = Panel of Panel.msg | Badge of Badge.msg
 
-type component =
-  ( scene_common_data,
-    Lib.User_data.user_data,
-    string,
-    component_msg,
-    unit,
-    Mgl_base.scene_msg )
-  Component.abstract_component
+let panel =
+  Component.port
+    (fun msg -> Panel msg)
+    (function Panel msg -> Some msg | _ -> None)
 
+let badge =
+  Component.port
+    (fun msg -> Badge msg)
+    (function Badge msg -> Some msg | _ -> None)
+
+type component = (unit, Lib.User_data.user_data, string, msg, unit) Component.t
 type data = { components : component list; last_panel_count : int }
 
 let init runtime env _msg =
-  let env = Base.add_common_data () env in
   {
     components =
       [
-        Components.Panel.Model.component
-          (Scenes_Portable_components_Panel_msg_Msg Panel_msg.Init) runtime env;
-        Badge_component.component ~matcher:(String.equal "badge")
-          ~map_target:Fun.id (Pcomp.Badge.Model.Init "portable badge") runtime
-          env;
+        Component.make panel Panel.component
+          { Panel.to_badge = badge.wrap }
+          runtime env;
+        Component.make badge Badge.component
+          { Badge.id = "badge"; text = "portable badge" }
+          runtime env;
       ];
     last_panel_count = 0;
   }
 
-let handle_component_msg data env = function
-  | General_model.SOMMsg som -> (data, [ som ], env)
-  | OtherMsg
-      (Scenes_Portable_components_Panel_msg_Msg
-         (Panel_msg.PortableUpdated count)) ->
-      ({ data with last_panel_count = count }, [], env)
-  | _ -> (data, [], env)
-
-let handle_component_msgs data env msgs =
-  List.fold_left
-    (fun (data, soms, env) msg ->
-      let data, new_soms, env = handle_component_msg data env msg in
-      (data, soms @ new_soms, env))
-    (data, [], env) msgs
+let handle data = function
+  | Panel (Updated count) -> { data with last_panel_count = count }
+  | Panel Ping | Badge _ -> data
 
 let update runtime env evnt data =
   match evnt with
   | Regl_proto.KeyDown "Backspace" ->
-      (data, [ Scene.SOMChangeScene (None, "Home") ], env)
-  | KeyDown "Enter" ->
-      let env = Base.add_common_data () env in
-      let components, msgs, env =
-        Component.update_components_with_target runtime env
-          [
-            ( "panel",
-              Scenes_Portable_components_Panel_msg_Msg Panel_msg.PingPortable );
-          ]
-          data.components
+      (data, [ Scene.SOMChangeScene (By_name "Home") ], env)
+  | KeyDown "Return" ->
+      let components, msgs, soms, env =
+        Component.send runtime env [ ("panel", Panel Ping) ] data.components
       in
-      let data, soms, env =
-        handle_component_msgs { data with components } env msgs
-      in
-      (data, soms, Base.remove_common_data env)
+      (List.fold_left handle { data with components } msgs, soms, env)
   | _ ->
-      let env = Base.add_common_data () env in
-      let components, msgs, (env, _block) =
-        Component.update_components runtime env evnt data.components
+      let components, msgs, soms, (env, _block) =
+        Component.update_children runtime env evnt data.components
       in
-      let data, soms, env =
-        handle_component_msgs { data with components } env msgs
-      in
-      (data, soms, Base.remove_common_data env)
+      (List.fold_left handle { data with components } msgs, soms, env)
 
 let view runtime env data =
-  let env = Base.add_common_data () env in
   Regl_common.group []
     [
       Regl_builtin_programs.clear Color.white;
       Regl_builtin_programs.textbox (0., 30.) 24.
-        "Portable components: Space/Enter updates badge, F flashes, Backspace \
+        "Portable components: Space/Return updates badge, F flashes, Backspace \
          home"
         "firacode" Color.black;
       Regl_builtin_programs.textbox (0., 65.) 20.
@@ -92,4 +70,4 @@ let view runtime env data =
 let scenecon : (_, _, _, _, _, _, _) Scene.concrete_scene =
   { init; update; view }
 
-let scene _msg runtime env = Scene.abstract scenecon None runtime env
+let scene msg runtime env = Scene.abstract scenecon msg runtime env

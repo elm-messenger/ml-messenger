@@ -113,7 +113,9 @@ and ('envro,
 
 let unroll (Roll un) = un
 
-let abstract (type data envro env event tar msg ren bdata sommsg)
+(* Abstract a model from already-initialized data; [conmodel.init] is not
+   called. *)
+let of_data (type data envro env event tar msg ren bdata sommsg)
     (conmodel :
       ( data,
         envro,
@@ -124,7 +126,7 @@ let abstract (type data envro env event tar msg ren bdata sommsg)
         ren,
         bdata,
         sommsg )
-      concrete_general_model) init_msg init_envro init_env =
+      concrete_general_model) data base =
   let rec abstract_rec data base =
     let update envro env event =
       let (new_d, new_bd), new_m, new_e =
@@ -149,8 +151,11 @@ let abstract (type data envro env event tar msg ren bdata sommsg)
         update_base_data;
       }
   in
-  let data, base = conmodel.init init_envro init_env init_msg in
   abstract_rec data base
+
+let abstract conmodel init_msg init_envro init_env =
+  let data, base = conmodel.init init_envro init_env init_msg in
+  of_data conmodel data base
 
 let view_model_list envro env models =
   List.map (fun model -> (unroll model).view envro env) models

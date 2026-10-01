@@ -36,3 +36,24 @@
  (libraries js_of_ocaml regl_js ml_regl_core ml-messenger)
  (flags
   (:standard -warn-error -A)))
+
+(test
+ (name test_component)
+ (modules test_component)
+ (libraries js_of_ocaml regl_js ml_regl_core ml-messenger messenger_extra)
+ (flags
+  (:standard -warn-error -A)))
+
+(test
+ (name test_example)
+ (modules test_example)
+ (libraries js_of_ocaml regl_js ml_regl_core ml-messenger messenger_test)
+ (flags
+  (:standard -warn-error -A)))
+
+(test
+ (name test_scene)
+ (modules test_scene)
+ (libraries js_of_ocaml regl_js ml_regl_core ml-messenger)
+ (flags
+  (:standard -warn-error -A)))

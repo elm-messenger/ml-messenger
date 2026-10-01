@@ -1,19 +1,21 @@
 open Ml_regl_core
-open Messenger_extra
+open Messenger
 
-type msg = Init of string | SetText of string | Flash
-type data = { target : string; text : string; color : Color.t }
+(* An ordinary component that knows nothing about its parent, so any parent can
+   use it through a port. *)
+type msg = Set_text of string | Flash
+type init = { id : string; text : string }
+type data = { id : string; text : string; color : Color.t }
 
-let init _runtime _env = function
-  | Init text -> { target = "badge"; text; color = Color.rgb 0.9 0.95 1. }
-  | _ -> { target = "badge"; text = "portable"; color = Color.rgb 0.9 0.95 1. }
+let init _runtime _env (init : init) =
+  { id = init.id; text = init.text; color = Color.rgb 0.9 0.95 1. }
 
-let update _runtime env _evt data = (data, [], (env, false))
+let update _runtime env _evnt data = (data, [], (env, false))
 
 let updaterec _runtime env msg data =
   match msg with
-  | Init text -> ({ data with text }, [], env)
-  | SetText text -> ({ data with text; color = Color.rgb 0.75 1. 0.82 }, [], env)
+  | Set_text text ->
+      ({ data with text; color = Color.rgb 0.75 1. 0.82 }, [], env)
   | Flash -> ({ data with color = Color.rgb 1. 0.88 0.5 }, [], env)
 
 let view _runtime _env data =
@@ -26,5 +28,11 @@ let view _runtime _env data =
       ],
     1 )
 
-let component : (_, _, _, _, _) Portable_component.concrete_portable_component =
-  { init; update; updaterec; view }
+let component =
+  {
+    Component.init;
+    update;
+    updaterec;
+    view;
+    matcher = (fun data target -> String.equal target data.id);
+  }

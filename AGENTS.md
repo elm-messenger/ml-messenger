@@ -30,8 +30,8 @@ JS or desktop branches to the portable framework just to work around a host.
 - `lib/general_model.ml`: existential model wrapper used by components and
   global components.
 - `lib/recursion.ml`: event traversal and recursive targeted-message routing.
-- `lib/component.ml`: typed user components, z-order rendering helpers, and
-  component update adapters.
+- `lib/component.ml`: components with their own message types (`spec`,
+  `port`, `make`, `update_children`, `send`) and z-order rendering helpers.
 - `lib/scene.ml`: scene abstraction, scene output messages, and global
   component types.
 - `lib/ui.ml`: top-level init/update/view pipeline and the only call to
@@ -41,21 +41,25 @@ JS or desktop branches to the portable framework just to work around a host.
 - `lib/resources.ml`, `lib/audio.ml`, `lib/camera.ml`: framework services over
   `Ml_regl_core`.
 - `lib/extra/`: optional helpers published as `Messenger_extra`, including
-  portable components, transitions, FPS, and asset loading.
-- `codegen/messenger_codegen.ml`: TOML-driven generator for application scene
-  and component message plumbing.
-- `test/test_recursion.ml`: fast non-GUI unit test run by `dune runtest`.
+  transitions, FPS, asset loading, and init-update components.
+- `test/test_recursion.ml`, `test/test_component.ml`: fast non-GUI unit tests
+  for routing and the component API, run by `dune runtest`.
+- `test/test_example.ml`: headless test that drives `messenger_test` scenes
+  without `Ui` and checks the text they draw.
 - `test/test.ml`: minimal cross-backend compilation/smoke application.
 - `test/messenger_test/`: full example application and primary integration
   fixture for scenes, components, resources, audio, camera, and transitions.
+  It is a library (`messenger_test`); `main.ml` only picks a backend.
 - `docs/main.typ` and `docs/architecture.png`: architecture documentation.
 - `docs/known_issues.md`: open problems and intended-but-surprising behavior;
   update it when fixing or finding one.
+- `docs/redesign_plan.md`: the in-progress component/scene redesign; read its
+  current position before changing components or scenes.
 
 The `messenger` library is published as `ml-messenger` and is available to
 consumers as the wrapped `Messenger` module. `lib/extra` is the separate
 wrapped `Messenger_extra` library, published as `ml-messenger.extra`;
-applications using portable components, transitions, or other helpers must
+applications using transitions or other helpers must
 list it in their Dune `libraries`. There are intentionally few `.mli` files,
 so a new top-level binding can become public API; avoid accidental API growth.
 
@@ -87,31 +91,42 @@ so a new top-level binding can become public API; avoid accidental API growth.
   (`regl_js` or `regl_desktop`) supplies the virtual `Regl_backend`
   implementation; application source should remain identical.
 
-## Generated application code
+## Application structure
 
-The example app uses `(include_subdirs qualified)` and generates
-`mgl_base.ml` and `mgl_all.ml` from `project.toml` plus recursively discovered
-`config.toml` files. The Dune rule in `test/messenger_test/dune` runs
-`messenger_codegen` automatically.
+Applications are plain OCaml; there is no code generation.
+`test/messenger_test` is the reference shape:
 
-- Never hand-edit `mgl_base.ml` or `mgl_all.ml`; they begin with an
-  `@generated` marker and live under `_build`.
-- Put project-wide defaults, resources, initial scene, and global components
-  in `project.toml`. `[main] user_data_type` names the user data type
-  (default `Lib.User_data.user_data`).
-- Put scene registration and component declarations in the nearest
-  `config.toml`. Scene and message module paths are qualified OCaml paths.
-- A `portable` component requires `module`; a `user` component requires `msg`.
-  Generated constructor names are derived from full module paths and must be
-  unique.
-- Message source modules are folded into generated `Mgl_base.Msg`; edit the
-  original message `.ml` file, then rebuild the generator targets or the app.
+- The app is a library with `(include_subdirs qualified)`. `app.ml` builds the
+  `Ui.input` record (config, resources, global components, and the scene
+  table); `main.ml` is only `Ui.gen_main App.input`, copied to
+  `main_desktop.ml` for the native backend.
+- A component module defines its own `msg`, `init`, and `data` types and a
+  `component` record literal (`{ Component.init; update; updaterec; view;
+  matcher }`). It never names its parent's message type.
+- A parent (scene or component) defines the union of its direct children's
+  messages and one `Component.port` per child kind, creates children with
+  `Component.make`, and updates them with `Component.update_children` or
+  `Component.send`. A component with subcomponents (what Elm messenger calls
+  a layer) defines `msg` for its parent and `child_msg` for its children.
+- Children report with `Component.Parent`, reach same-kind siblings with
+  `Other`, other siblings with `Sibling` (through a capability the parent
+  passes in their init), and scene output with `Som`.
+- Scenes are registered in `app.ml` with `Scene.table`: `Scene.named name
+  scene` for a scene without parameters, `Scene.entry key scene` for one that
+  is started with typed parameters (`let key : params Scene.key = Scene.key
+  "Game"`). Scenes change with `SOMChangeScene (By_name name)` or
+  `SOMChangeScene (By_key (key, params))`, and the scene's `init` receives
+  `None` or `Some params`. Put a key that other scenes use in a plain module
+  next to the scene directories so scenes can refer to each other's keys
+  without a cycle.
+- Under `(include_subdirs qualified)`, a reference to a subdirectory depends on
+  everything in it. Children may read plain modules in ancestor directories
+  (e.g. a `common.ml`), but must never reference their parent's model or
+  union; sibling directories may reference each other in one direction only.
+  See `docs/redesign_plan.md` for the tested rules.
 - `ml-messenger.opam` is generated from `dune-project`; change package
   metadata/dependencies in `dune-project`, then regenerate rather than editing
   the opam file directly.
-
-Use `test/messenger_test` as the reference shape for new scenes, nested user
-components, portable components, and resource declarations.
 
 ## Build and verification
 
@@ -122,14 +137,14 @@ dune build
 dune runtest
 ```
 
-`dune runtest` currently exercises only the non-GUI recursion test. Match
-verification to the change:
+`dune runtest` runs the non-GUI unit tests and the headless example test.
+Match verification to the change:
 
 ```sh
 # Check OCaml formatting; requires ocamlformat in the active opam environment.
 dune build @fmt
 
-# Compile the browser applications and exercise code generation.
+# Compile the browser applications.
 dune build test/test.bc.js test/messenger_test/main.bc.js
 
 # Compile the native applications.
@@ -167,7 +182,7 @@ app. Do not claim visual or audio verification from compilation alone.
 - Preserve backend parity. Input keys follow the shared backend vocabulary
   (for example `"Space"`, `"Return"`, and 1-based mouse buttons); use
   `Messenger_extra.Key_code` when suitable.
-- Do not edit `_build`, generated protocol modules, generated `mgl_*` modules,
+- Do not edit `_build`, generated protocol modules,
   or files inside a submodule as if they belonged to this repository.
 - The codebase disables warnings-as-errors in Dune, but new warnings should
   still be treated as defects.

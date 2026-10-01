@@ -2,28 +2,27 @@ open Ml_regl_core
 open Messenger
 open Transition_base
 
-type ('scenemsg, 'userdata) init_option = {
+type init_option = {
   transition : transition;
-  scene : string * 'scenemsg option;
+  scene : Scene.target;
   filter_som : bool;
 }
 
 type phase = BeforeChange | AfterChange | Finished
 
-type ('userdata, 'scenemsg) data = {
+type 'userdata data = {
   transition : transition;
-  target_scene : string;
-  target_msg : 'scenemsg option;
+  target : Scene.target;
   filter_som : bool;
   phase : phase;
-  old_vsr : ('userdata, 'scenemsg) Vsr.t option;
+  old_vsr : 'userdata Vsr.t option;
   prev_ts : float option;
 }
 
 let clamp01 x = max 0. (min 1. x)
 let empty_pp r = r
 
-let init (opt : ('scenemsg, 'userdata) init_option) runtime env _msg =
+let init (opt : init_option) runtime env _msg =
   let old_vsr =
     Some
       {
@@ -34,8 +33,7 @@ let init (opt : ('scenemsg, 'userdata) init_option) runtime env _msg =
   in
   ( {
       transition = opt.transition;
-      target_scene = fst opt.scene;
-      target_msg = snd opt.scene;
+      target = opt.scene;
       filter_som = opt.filter_som;
       phase = BeforeChange;
       old_vsr;
@@ -70,10 +68,7 @@ let update_m_transition _runtime env (mt : mix_transition) data _bdata dt =
   let data = { data with transition; phase = AfterChange } in
   let msgs =
     if was_before_change then
-      [
-        General_model.Parent
-          (SOMMsg (Scene.SOMChangeScene (data.target_msg, data.target_scene)));
-      ]
+      [ General_model.Parent (SOMMsg (Scene.SOMChangeScene data.target)) ]
     else []
   in
   ((data, bdata), msgs, (env, false))
@@ -95,11 +90,7 @@ let update_nm_transition _runtime env (nt : no_mix_transition) data bdata dt =
         let transition = NMTransition { nt with current_transition = 0. } in
         let data = { data with transition; phase = AfterChange } in
         ( (data, bdata),
-          [
-            General_model.Parent
-              (SOMMsg
-                 (Scene.SOMChangeScene (data.target_msg, data.target_scene)));
-          ],
+          [ General_model.Parent (SOMMsg (Scene.SOMChangeScene data.target)) ],
           (env, false) )
       else
         let transition =
@@ -153,7 +144,7 @@ let update runtime env evnt data bdata =
 let updaterec _runtime env _msg data bdata = ((data, bdata), [], env)
 let view _runtime _env _data _bdata = Regl_builtin_programs.empty
 
-let gc_con opt () : (_, _, _) Scene.concrete_global_component =
+let gc_con opt () : (_, _) Scene.concrete_global_component =
   { init = init opt; update; updaterec; view; id = "transition" }
 
 let gen_gc opt target =

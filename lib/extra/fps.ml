@@ -46,7 +46,7 @@ let view _runtime _env data _bdata =
     ("FPS: " ^ string_of_int (int_of_float data.fps))
     data.font (Color.rgba 0. 0. 0. 0.5)
 
-let gc_con opt () : (_, _, _) Scene.concrete_global_component =
+let gc_con opt () : (_, _) Scene.concrete_global_component =
   { init = init opt; update; updaterec; view; id = "fps" }
 
 let gen_gc opt target =

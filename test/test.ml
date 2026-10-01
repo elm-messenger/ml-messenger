@@ -2,7 +2,6 @@ open Ml_regl_core
 open Messenger
 
 type user_data = unit
-type scene_msg = unit
 
 let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
   {
@@ -33,19 +32,16 @@ let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
           ]);
   }
 
-let scene_storage _ runtime env = Scene.abstract scene_con None runtime env
+let scene_storage msg runtime env = Scene.abstract scene_con msg runtime env
 
-let scenes : (user_data, scene_msg) Scene.all_scenes =
-  let tbl = Hashtbl.create 1 in
-  Hashtbl.add tbl "main" scene_storage;
-  tbl
+let scenes : user_data Scene.all_scenes =
+  Scene.table [ Scene.named "main" scene_storage ]
 
-let input : (user_data, scene_msg) Ui.input =
+let input : user_data Ui.input =
   {
     config =
       {
-        init_scene = "main";
-        init_scene_msg = None;
+        init_scene = By_name "main";
         virtual_size = { Ui.width = 800.; height = 600. };
         fbo_num = 5;
         max_assets_per_frame = 4;

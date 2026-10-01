@@ -18,10 +18,10 @@
  (synopsis "A functional, message-driven 2D game engine for OCaml.")
  (description "The OCaml port of the Elm messenger framework, sitting on top of the ml-regl rendering backend.")
  (depends
-  ocaml
+  (ocaml
+   (>= 5.1))
   ml_regl_core
   regl_backend
-  otoml
   (js_of_ocaml :with-test)
   (regl_js :with-test))
  (allow_empty))

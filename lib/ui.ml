@@ -9,9 +9,8 @@ type enabled_builtin_program =
 
 type size = { width : float; height : float }
 
-type ('userdata, 'scenemsg) user_config = {
-  init_scene : string;
-  init_scene_msg : 'scenemsg option;
+type 'userdata user_config = {
+  init_scene : Scene.target;
   virtual_size : size;
   fbo_num : int;
   max_assets_per_frame : int;
@@ -21,11 +20,11 @@ type ('userdata, 'scenemsg) user_config = {
   app_name : string option;
 }
 
-type ('userdata, 'scenemsg) input = {
-  config : ('userdata, 'scenemsg) user_config;
+type 'userdata input = {
+  config : 'userdata user_config;
   resources : Resources.resource_defs;
-  scenes : ('userdata, 'scenemsg) Scene.all_scenes;
-  global_components : ('userdata, 'scenemsg) Scene.global_component_storage list;
+  scenes : 'userdata Scene.all_scenes;
+  global_components : 'userdata Scene.global_component_storage list;
 }
 
 let builtin_programs = function
@@ -65,10 +64,7 @@ let make_initial_model input runtime =
   }
 
 let load_initial_scene_and_gcs input model =
-  let model =
-    Loader.load_scene_by_name input.config.init_scene input.scenes
-      input.config.init_scene_msg model
-  in
+  let model = Loader.load_target input.config.init_scene input.scenes model in
   let env_for_gc = model.env in
   let gcs =
     List.map (fun gc -> gc model.runtime env_for_gc) input.global_components
@@ -79,7 +75,7 @@ let init input () =
   let runtime = Internal.empty_runtime () in
   runtime.volume <- input.config.default_global_data.volume;
   runtime.tot_res_num <- Resources.resource_num input.resources;
-  runtime.current_scene <- input.config.init_scene;
+  runtime.current_scene <- Scene.target_name input.config.init_scene;
   runtime.virtual_size <-
     (input.config.virtual_size.width, input.config.virtual_size.height);
   runtime.max_assets_per_frame <- input.config.max_assets_per_frame;
@@ -177,8 +173,8 @@ let handle_audio_msg input model msg =
 let rec handle_som input som model =
   let r = model.Model.runtime in
   match som with
-  | Scene.SOMChangeScene (msg, name) ->
-      (Loader.load_scene_by_name name input.scenes msg model, [])
+  | Scene.SOMChangeScene target ->
+      (Loader.load_target target input.scenes model, [])
   | SOMPlayAudio (channel, name, opt) ->
       Audio.play_audio r.audio_repo channel name opt r.current_timestamp;
       (model, [])

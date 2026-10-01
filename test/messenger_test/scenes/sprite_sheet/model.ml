@@ -10,7 +10,7 @@ let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
       (fun _ env evnt data ->
         match evnt with
         | Regl_proto.KeyDown "Backspace" ->
-            (data, [ Scene.SOMChangeScene (None, "Home") ], env)
+            (data, [ Scene.SOMChangeScene (By_name "Home") ], env)
         | Regl_proto.UpdateTick _ -> ({ frame = data.frame + 1 }, [], env)
         | _ -> (data, [], env));
     view =
@@ -42,4 +42,4 @@ let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
           :: sprites));
   }
 
-let scene _msg runtime env = Scene.abstract scene_con None runtime env
+let scene msg runtime env = Scene.abstract scene_con msg runtime env

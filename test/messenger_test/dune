@@ -1,29 +1,28 @@
 (include_subdirs qualified)
 
-(rule
- (targets mgl_base.ml mgl_all.ml)
- (deps
-  project.toml
-  (glob_files_rec **/config.toml))
- (action
-  (run %{bin:messenger_codegen} --root . --out-dir .)))
+; The application is a library so it compiles once and tests can link it; the
+; executables only pick a backend.
+
+(library
+ (name messenger_test)
+ (modules
+  (:standard \ main main_desktop))
+ (libraries ml_regl_core ml-messenger messenger_extra)
+ (flags
+  (:standard -warn-error -A)))
 
 (executable
  (name main)
- (modules
-  (:standard \ main_desktop))
- (libraries js_of_ocaml regl_js ml-messenger messenger_extra)
+ (modules main)
+ (libraries regl_js messenger_test)
  (modes js)
- (preprocess
-  (pps js_of_ocaml-ppx))
  (flags
   (:standard -warn-error -A)))
 
 (executable
  (name main_desktop)
- (modules
-  (:standard \ main))
- (libraries regl_desktop ml-messenger messenger_extra)
+ (modules main_desktop)
+ (libraries regl_desktop messenger_test)
  (modes
   (native exe))
  (flags

@@ -1,6 +1,0 @@
-(executable
- (name messenger_codegen)
- (public_name messenger_codegen)
- (libraries unix otoml)
- (flags
-  (:standard -warn-error -A)))

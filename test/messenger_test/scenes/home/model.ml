@@ -3,7 +3,7 @@ open Messenger
 
 type data = unit
 
-let change name = [ Scene.SOMChangeScene (None, name) ]
+let change name = [ Scene.SOMChangeScene (By_name name) ]
 
 let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
   {
@@ -49,4 +49,4 @@ let scene_con : (_, _, _, _, _, _, _) Scene.concrete_scene =
           ]);
   }
 
-let scene _msg runtime env = Scene.abstract scene_con None runtime env
+let scene msg runtime env = Scene.abstract scene_con msg runtime env

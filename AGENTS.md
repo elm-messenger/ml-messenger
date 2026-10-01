@@ -130,6 +130,11 @@ Applications are plain OCaml; there is no code generation.
   `None` or `Some params`. Put a key that other scenes use in a plain module
   next to the scene directories so scenes can refer to each other's keys
   without a cycle.
+- A storage read (`SOMReadValue key`) is answered by a
+  `Regl_proto.ValueRead { key; value }` event (`value = None` when nothing is
+  stored), delivered to global components, the active scene, and its
+  children like any other input. `Base.get_local_value` caches the latest
+  value.
 - Under `(include_subdirs qualified)`, a reference to a subdirectory depends on
   everything in it. Children may read plain modules in ancestor directories
   (e.g. a `common.ml`), but must never reference their parent's model or
@@ -167,6 +172,17 @@ and block until it closes. For browser smoke testing, initialize the
 `ml-regl-js` submodule, build its bundle with `pnpm`/`make`, serve the repository
 root over HTTP, and open `index.html`; its script paths are absolute from that
 root.
+
+This repository builds against the opam-installed `ml-regl` packages, which
+are pinned to `../ml-regl`'s `main` branch. After committing an `ml-regl`
+change, reinstall them before building here:
+
+```sh
+cd ../ml-regl
+export DECLGL_BUILD_DIR=$PWD/declgl-desktop/build/linux-release
+opam update ml_regl_core regl_backend regl_desktop regl_js
+opam reinstall -y ml_regl_core regl_backend regl_desktop regl_js
+```
 
 When changing shared rendering/backend behavior, also verify `../ml-regl`.
 Its portable unit test is `dune runtest`. Browser test bundles live under its

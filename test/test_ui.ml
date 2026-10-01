@@ -52,6 +52,12 @@ let scene name msg runtime env =
             | KeyDown "P" ->
                 [ Scene.SOMCallGC ("probe", "ping"); SOMCallGC ("nobody", "x") ]
             | KeyDown "U" -> [ Scene.SOMUnloadGC "probe" ]
+            | KeyDown "R" -> [ Scene.SOMReadValue "best"; SOMReadValue "none" ]
+            | ValueRead { key; value } ->
+                [
+                  Scene.SOMSaveValue
+                    ("seen:" ^ key, Option.value value ~default:"<missing>");
+                ]
             | _ -> []
           in
           ((), soms, env));
@@ -179,3 +185,16 @@ let () =
   assert (Base.get_local_value "probe" m.runtime = Some "ping2");
   let m = event m (KeyDown "U") in
   assert (gcs m = 0)
+
+(* A storage read goes out as a command; the reply reaches the scene as a
+   [ValueRead] event, and [Base.get_local_value] caches it. *)
+let () =
+  let m, _ = Ui.init input () in
+  let m, _, outputs = step m (Regl_proto.Event (KeyDown "R")) in
+  assert (count (Regl_proto.read_value "best") outputs = 1);
+  let m = event m (ValueRead { key = "best"; value = Some "42" }) in
+  assert (Base.get_local_value "best" m.runtime = Some "42");
+  assert (Base.get_local_value "seen:best" m.runtime = Some "42");
+  let m = event m (ValueRead { key = "none"; value = None }) in
+  assert (Base.get_local_value "none" m.runtime = None);
+  assert (Base.get_local_value "seen:none" m.runtime = Some "<missing>")

@@ -25,10 +25,3 @@ of writing.
   start offset). `Regl_audio.audio` is abstract, so an `offset_by` applied later
   through `SOMTransformAudio` is not taken into account, and the sound may be
   stopped early.
-- **Values read from local storage must be polled.** `SOMReadValue`
-  (`lib/ui.ml:229`) stores the reply in the runtime; the scene is not sent a
-  message when it arrives, so it has to call `Base.get_local_value` until the
-  value appears. A key that was never saved comes back as "missing", which
-  only removes the entry (`lib/ui.ml:160`), so "not arrived yet" and
-  "does not exist" both read as `None` and a scene waiting for an unsaved key
-  waits forever. Telling them apart needs an API addition.

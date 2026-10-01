@@ -155,9 +155,7 @@ let handle_regl_recv input model msg =
   | REGLFileLoadFailed { path; _ } ->
       (* Not counted as progress; forgetting the keys lets a later load of the
          same path send a new request. *)
-      ignore (take_waiting r.pending_data_paths path)
-  | REGLValueRead { key; value } -> Hashtbl.replace r.local_values key value
-  | REGLValueReadMissing key -> Hashtbl.remove r.local_values key);
+      ignore (take_waiting r.pending_data_paths path));
   ignore input;
   (model, [])
 
@@ -277,6 +275,9 @@ let update_input_state (r : Internal.runtime) = function
   | MouseMove { x; y } -> r.mouse_pos <- (x, y)
   | KeyDown key -> r.pressed_keys <- Internal.StringSet.add key r.pressed_keys
   | KeyUp key -> r.pressed_keys <- Internal.StringSet.remove key r.pressed_keys
+  | ValueRead { key; value = Some value } ->
+      Hashtbl.replace r.local_values key value
+  | ValueRead { key; value = None } -> Hashtbl.remove r.local_values key
 
 let update input model regl_input =
   let model, outputs =

@@ -54,6 +54,7 @@ let input : user_data Ui.input =
             volume = 1.;
           };
         app_name = None;
+        init_window = Regl_proto.default_window_config;
       };
     resources = [];
     scenes;

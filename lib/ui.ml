@@ -18,6 +18,9 @@ type 'userdata user_config = {
   time_interval : Regl_proto.time_interval;
   default_global_data : 'userdata Base.global_data_init;
   app_name : string option;
+  init_window : Regl_proto.window_config;
+      (* Window flags and title the backend opens the window with;
+         [Regl_proto.default_window_config] keeps the backend defaults. *)
 }
 
 type 'userdata input = {
@@ -96,7 +99,7 @@ let init input () =
       virt_height = input.config.virtual_size.height;
       fbo_num = input.config.fbo_num;
       builtin_programs = builtin_programs input.config.enabled_program;
-      window = Regl_proto.default_window_config;
+      window = input.config.init_window;
       app_name = input.config.app_name;
     }
   in

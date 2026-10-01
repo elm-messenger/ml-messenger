@@ -22,6 +22,11 @@ let config : user_data Ui.user_config =
         volume = 0.5;
       };
     app_name = Some "Messenger Test";
+    init_window =
+      {
+        Ml_regl_core.Regl_proto.default_window_config with
+        title = Some "Messenger Test";
+      };
   }
 
 (* None of these scenes takes parameters, so each is registered by name. A scene

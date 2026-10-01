@@ -83,6 +83,7 @@ let input : unit Ui.input =
         default_global_data =
           { Base.user_data = (); camera = Camera.origin; volume = 1. };
         app_name = None;
+        init_window = Regl_proto.default_window_config;
       };
     resources =
       [

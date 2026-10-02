@@ -29,7 +29,11 @@ let update runtime env evnt data bdata =
   let data =
     match evnt with
     | Regl_proto.UpdateTick ts ->
-        let delta = match data.prev_ts with None -> 0. | Some p -> ts -. p in
+        (* Ignore a clock that jumps back (the MCP server's controlled
+           clock). *)
+        let delta =
+          match data.prev_ts with None -> 0. | Some p -> Float.max 0. (ts -. p)
+        in
         { data with elapsed = data.elapsed +. delta; prev_ts = Some ts }
     | _ -> data
   in

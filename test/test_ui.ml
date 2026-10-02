@@ -221,6 +221,16 @@ let () =
   let m = event m (KeyDown "U") in
   assert (gcs m = 0)
 
+(* The clock can jump backwards (the MCP server's controlled clock starts at 0);
+   a transition ignores the jump instead of stalling until time catches up. *)
+let () =
+  let m, _ = Ui.init input () in
+  let m = event m (KeyDown "T") in
+  let m = event m (UpdateTick 70000.) in
+  let m = event m (UpdateTick 0.) in
+  let m = event m (UpdateTick 1500.) in
+  assert (scene_name m = "B")
+
 (* A storage read goes out as a command; the reply reaches the scene as a
    [ValueRead] event, and [Base.get_local_value] caches it. *)
 let () =

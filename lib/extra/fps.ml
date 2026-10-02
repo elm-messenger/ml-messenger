@@ -32,7 +32,10 @@ let init opt _runtime _env =
 let update _runtime env evnt data bdata =
   match evnt with
   | Regl_proto.UpdateTick ts ->
-      let delta = match data.prev_ts with None -> 0. | Some p -> ts -. p in
+      (* Ignore a clock that jumps back (the MCP server's controlled clock). *)
+      let delta =
+        match data.prev_ts with None -> 0. | Some p -> Float.max 0. (ts -. p)
+      in
       let last_times = trim_to_last_ten data.last_times @ [ delta ] in
       let sum = List.fold_left ( +. ) 0. last_times in
       let fps =

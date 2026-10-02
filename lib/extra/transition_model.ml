@@ -139,7 +139,11 @@ let update runtime env evnt data bdata =
   in
   match evnt with
   | Regl_proto.UpdateTick ts -> (
-      let dt = match data.prev_ts with None -> 0. | Some p -> ts -. p in
+      (* A clock that jumps back (the MCP server's controlled clock starts at 0)
+         must not wind the transition back. *)
+      let dt =
+        match data.prev_ts with None -> 0. | Some p -> Float.max 0. (ts -. p)
+      in
       let data = { data with prev_ts = Some ts } in
       match data.transition with
       | MTransition mt -> update_m_transition runtime env mt data bdata dt

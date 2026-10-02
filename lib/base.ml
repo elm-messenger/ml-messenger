@@ -28,6 +28,30 @@ let get_mouse_pos r = r.Internal.mouse_pos
 let get_pressed_mouse_buttons r = r.Internal.pressed_mouse_buttons
 let get_pressed_keys r = r.Internal.pressed_keys
 let get_volume r = r.Internal.volume
+
+(** A loaded font's metrics, by its resource name. *)
+let get_font_metrics name r = Hashtbl.find_opt r.Internal.font_metrics name
+
+(** Lay [text] out as a textbox with the same options would (see
+    [Ml_regl_core.Regl_text.measure]); [None] until every font in [fonts] has
+    loaded. *)
+let measure_text ?letter_spacing ?word_spacing ?tab_size ?line_height ?width
+    ?word_break ~fonts ~size text r =
+  let metrics = List.map (fun name -> get_font_metrics name r) fonts in
+  if fonts = [] || List.exists Option.is_none metrics then None
+  else
+    Some
+      (Ml_regl_core.Regl_text.measure ?letter_spacing ?word_spacing ?tab_size
+         ?line_height ?width ?word_break
+         (List.filter_map Fun.id metrics)
+         size text)
+
+(** [measure_text] for a [textbox_pro] option. *)
+let measure_textbox opt r =
+  Ml_regl_core.Regl_text.measure_textbox
+    (fun name -> get_font_metrics name r)
+    opt
+
 let get_current_scene r = r.Internal.current_scene
 let get_virtual_size r = r.Internal.virtual_size
 let get_max_assets_per_frame r = r.Internal.max_assets_per_frame

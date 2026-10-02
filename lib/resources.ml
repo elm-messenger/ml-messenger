@@ -11,6 +11,12 @@ type resource_def =
 
 type resource_defs = (string * resource_def) list
 
-let resource_num = List.length
+(* Loads a resource takes: a font is its atlas and its metrics (the JSON, read
+   again for Base.measure_text). *)
+let load_count = function Font_res _ -> 2 | _ -> 1
+
+let resource_num defs =
+  List.fold_left (fun n (_, def) -> n + load_count def) 0 defs
+
 let save_sprite dst name texture = Hashtbl.replace dst name texture
 let iget_sprite name dst = Hashtbl.find_opt dst name

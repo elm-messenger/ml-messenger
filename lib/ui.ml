@@ -55,20 +55,26 @@ let take_waiting waiting source =
   Hashtbl.remove waiting source;
   keys
 
-let load_resource_command (runtime : Internal.runtime) key = function
+let load_resource_commands (runtime : Internal.runtime) key = function
   | Resources.Texture_res (url, opts) ->
-      Some (Regl_proto.load_texture key url opts)
+      [ Regl_proto.load_texture key url opts ]
   | Audio_res url ->
       if add_waiting runtime.pending_audio_urls url key then
-        Some (Regl_proto.load_audio url)
-      else None
-  | Font_res (image, json) -> Some (Regl_proto.load_font key image json)
+        [ Regl_proto.load_audio url ]
+      else []
+  | Font_res (image, json) ->
+      (* The JSON again, for the metrics Base.measure_text uses. *)
+      Regl_proto.load_font key image json
+      ::
+      (if add_waiting runtime.pending_font_metrics json key then
+         [ Regl_proto.load_file json ]
+       else [])
   | Program_res (program, shader_language) ->
-      Some (Regl_proto.create_regl_program ~shader_language key program)
+      [ Regl_proto.create_regl_program ~shader_language key program ]
   | Data_res path ->
       if add_waiting runtime.pending_data_paths path key then
-        Some (Regl_proto.load_file path)
-      else None
+        [ Regl_proto.load_file path ]
+      else []
 
 let make_initial_model input runtime =
   let global_data = Base.global_data_of_init input.config.default_global_data in
@@ -105,8 +111,8 @@ let init input () =
     }
   in
   let resource_cmds =
-    List.filter_map
-      (fun (key, res) -> load_resource_command runtime key res)
+    List.concat_map
+      (fun (key, res) -> load_resource_commands runtime key res)
       input.resources
   in
   let outputs =
@@ -155,11 +161,23 @@ let handle_regl_recv input model msg =
         (fun key ->
           Hashtbl.replace r.config_data key data;
           r.loaded_res_num <- r.loaded_res_num + 1)
-        (take_waiting r.pending_data_paths path)
+        (take_waiting r.pending_data_paths path);
+      List.iter
+        (fun key ->
+          match Regl_text.parse_bmfont data with
+          | Ok metrics ->
+              Hashtbl.replace r.font_metrics key metrics;
+              r.loaded_res_num <- r.loaded_res_num + 1
+          | Error e ->
+              prerr_endline
+                ("ml-messenger: cannot read the metrics of font " ^ key ^ ": "
+               ^ e))
+        (take_waiting r.pending_font_metrics path)
   | REGLFileLoadFailed { path; _ } ->
       (* Not counted as progress; forgetting the keys lets a later load of the
          same path send a new request. *)
-      ignore (take_waiting r.pending_data_paths path));
+      ignore (take_waiting r.pending_data_paths path);
+      ignore (take_waiting r.pending_font_metrics path));
   ignore input;
   (model, [])
 
@@ -222,9 +240,8 @@ let rec handle_som input som model =
       r.max_assets_per_frame <- max_items;
       (model, [ Regl_proto.config_regl (ConfigMaxAssetsPerFrame max_items) ])
   | SOMLoadResource (key, res) ->
-      r.tot_res_num <- r.tot_res_num + 1;
-      let cmd = load_resource_command r key res in
-      (model, Option.to_list cmd)
+      r.tot_res_num <- r.tot_res_num + Resources.load_count res;
+      (model, load_resource_commands r key res)
   | SOMSaveValue (key, value) ->
       Hashtbl.replace r.local_values key value;
       (model, [ Regl_proto.save_value key value ])

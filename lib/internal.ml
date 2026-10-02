@@ -30,6 +30,9 @@ type runtime = {
       (** Resource keys waiting for a file or audio URL. The load protocol names
           neither by key, so one request is sent per path or URL and its reply
           registers every waiting key. *)
+  font_metrics : (string, Ml_regl_core.Regl_text.metrics) Hashtbl.t;
+  pending_font_metrics : (string, string list) Hashtbl.t;
+      (** Font keys waiting for their JSON, by path. *)
   mutable current_timestamp : float;
   mutable pressed_mouse_buttons : IntSet.t;
   mutable pressed_keys : StringSet.t;
@@ -54,6 +57,8 @@ let empty_runtime () =
     local_values = Hashtbl.create 16;
     pending_data_paths = Hashtbl.create 16;
     pending_audio_urls = Hashtbl.create 16;
+    font_metrics = Hashtbl.create 8;
+    pending_font_metrics = Hashtbl.create 8;
     current_timestamp = 0.;
     pressed_mouse_buttons = IntSet.empty;
     pressed_keys = StringSet.empty;

@@ -154,6 +154,44 @@ let () =
   in
   assert (count (Regl_proto.load_file "g.json") outputs = 1)
 
+(* A font loads its atlas and its metrics (two loads), and text can be measured
+   once the metrics are in. *)
+let () =
+  let font_json =
+    {|{"common": {"lineHeight": 20}, "chars": [{"id": 32, "xadvance": 5},
+       {"id": 65, "xadvance": 10}, {"id": 86, "xadvance": 12}],
+       "kernings": [{"first": 65, "second": 86, "amount": -2}]}|}
+  in
+  let input =
+    { input with resources = [ ("f", Resources.Font_res ("f.png", "f.json")) ] }
+  in
+  let m, outputs = Ui.init input () in
+  assert (count (Regl_proto.load_font "f" "f.png" "f.json") outputs = 1);
+  assert (count (Regl_proto.load_file "f.json") outputs = 1);
+  assert (progress m = (0, 2));
+  let measure m =
+    Base.measure_text ~fonts:[ "f" ] ~size:40. "AV A" m.Model.runtime
+  in
+  let m = recv m (REGLFontLoaded "f") in
+  assert (progress m = (1, 2));
+  assert (measure m = None);
+  let m = recv m (REGLFileLoaded { path = "f.json"; data = font_json }) in
+  assert (progress m = (2, 2));
+  (match measure m with
+  | Some r -> assert (r.width = 70. && r.lines = [ 70. ] && r.height = 40.)
+  | None -> assert false);
+  let opt =
+    {
+      Regl_builtin_programs.default_textbox_option with
+      fonts = [ "f" ];
+      text = "A\nAV";
+      size = 40.;
+    }
+  in
+  match Base.measure_textbox opt m.runtime with
+  | Some r -> assert (r.lines = [ 20.; 40. ])
+  | None -> assert false
+
 (* Window flags and quitting are commands to the host. *)
 let () =
   let m, _ = Ui.init input () in

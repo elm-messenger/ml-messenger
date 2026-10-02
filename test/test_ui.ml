@@ -154,6 +154,17 @@ let () =
   in
   assert (count (Regl_proto.load_file "g.json") outputs = 1)
 
+(* Window flags and quitting are commands to the host. *)
+let () =
+  let m, _ = Ui.init input () in
+  let window =
+    { Regl_proto.default_window_config with fullscreen = Some true }
+  in
+  let _, outputs = Ui.handle_som input (SOMConfigWindow window) m in
+  assert (outputs = [ Regl_proto.config_regl (ConfigWindow window) ]);
+  let _, outputs = Ui.handle_som input SOMQuit m in
+  assert (outputs = [ Regl_proto.quit_regl () ])
+
 (* A program resource is created in the shader language it names. *)
 let () =
   let m, _ = Ui.init input () in

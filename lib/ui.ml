@@ -229,6 +229,9 @@ let rec handle_som input som model =
       Hashtbl.replace r.local_values key value;
       (model, [ Regl_proto.save_value key value ])
   | SOMReadValue key -> (model, [ Regl_proto.read_value key ])
+  | SOMConfigWindow window ->
+      (model, [ Regl_proto.config_regl (ConfigWindow window) ])
+  | SOMQuit -> (model, [ Regl_proto.quit_regl () ])
 
 and handle_soms input soms model =
   List.fold_left

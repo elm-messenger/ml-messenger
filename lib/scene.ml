@@ -59,6 +59,9 @@ and 'userdata scene_output_msg =
   | SOMLoadResource of string * Resources.resource_def
   | SOMSaveValue of string * string
   | SOMReadValue of string
+  | SOMConfigWindow of Regl_proto.window_config
+      (** Change window flags or the title; [None] fields stay unchanged. *)
+  | SOMQuit  (** Close the window (desktop) or stop the loop (browser). *)
 
 and ('userdata, 'param) scene_storage =
   'param option ->
